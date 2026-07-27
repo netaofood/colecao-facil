@@ -22,6 +22,20 @@ export interface Perfil {
   foto_url: string | null;
   papel: Papel;
   ativo: boolean;
+  perfil_publico: boolean;
+  nascimento: string | null;
+  termos_aceitos_em: string | null;
+  termos_versao: string | null;
+}
+
+export interface DadosCadastro {
+  nome: string;
+  email: string;
+  senha: string;
+  convite: string;
+  /** ISO: aaaa-mm-dd */
+  nascimento: string;
+  termosVersao: string;
 }
 
 interface AuthContextValue {
@@ -30,7 +44,8 @@ interface AuthContextValue {
   carregando: boolean;
   ehSuperAdmin: boolean;
   entrar: (email: string, senha: string) => Promise<void>;
-  cadastrar: (email: string, senha: string, nome: string) => Promise<void>;
+  cadastrar: (dados: DadosCadastro) => Promise<void>;
+  validarConvite: (codigo: string) => Promise<boolean>;
   recuperarSenha: (email: string) => Promise<void>;
   sair: () => Promise<void>;
   recarregarPerfil: () => Promise<void>;
@@ -101,13 +116,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw new Error(traduzErro(error.message));
     },
 
-    async cadastrar(email, senha, nome) {
+    async cadastrar(dados) {
       const { error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password: senha,
-        options: { data: { nome: nome.trim() } },
+        email: dados.email.trim().toLowerCase(),
+        password: dados.senha,
+        options: {
+          data: {
+            nome: dados.nome.trim(),
+            convite: dados.convite.trim().toUpperCase(),
+            nascimento: dados.nascimento,
+            termos_aceitos: 'true',
+            termos_versao: dados.termosVersao,
+          },
+        },
       });
       if (error) throw new Error(traduzErro(error.message));
+    },
+
+    async validarConvite(codigo) {
+      const { data, error } = await supabase.rpc('convite_valido', {
+        p_codigo: codigo.trim().toUpperCase(),
+      });
+      if (error) throw new Error(traduzErro(error.message));
+      return data === true;
     },
 
     async recuperarSenha(email) {
@@ -150,5 +181,19 @@ function traduzErro(msg: string): string {
     'For security purposes, you can only request this after 60 seconds.':
       'Aguarde um minuto antes de tentar de novo.',
   };
-  return mapa[msg] ?? msg;
+  if (mapa[msg]) return mapa[msg];
+
+  // Erros levantados pelo trigger handle_new_user (migration 0002)
+  const doBanco: [string, string][] = [
+    ['CONVITE_OBRIGATORIO', 'O cadastro é feito por convite. Peça um código a quem te indicou.'],
+    ['CONVITE_INVALIDO', 'Convite inexistente, já usado ou vencido.'],
+    ['CONVITE_OUTRO_EMAIL', 'Este convite foi enviado para outro e-mail.'],
+    ['NASCIMENTO_OBRIGATORIO', 'Informe sua data de nascimento.'],
+    ['IDADE_MINIMA', 'É necessário ter 18 anos ou mais para se cadastrar.'],
+    ['TERMOS_NAO_ACEITOS', 'É preciso aceitar os termos de uso.'],
+  ];
+  for (const [chave, texto] of doBanco) {
+    if (msg.includes(chave)) return texto;
+  }
+  return msg;
 }

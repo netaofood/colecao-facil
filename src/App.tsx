@@ -6,6 +6,7 @@ import { Login } from './pages/Login';
 import { Inicio } from './pages/Inicio';
 import { Perfil } from './pages/Perfil';
 import { EmBreve } from './pages/EmBreve';
+import { Convites } from './pages/admin/Convites';
 import { T } from './theme';
 
 export default function App() {
@@ -50,7 +51,7 @@ function Rotas() {
           path="/descobrir"
           element={<EmBreve titulo="Descobrir" fase="Fase 5" itens="item 10 do plano" />}
         />
-        <Route path="/admin" element={<RotaAdmin />} />
+        <Route path="/admin" element={<RotaAdmin><Convites /></RotaAdmin>} />
         <Route path="/login" element={<Navigate to="/inicio" replace />} />
         <Route path="*" element={<Navigate to="/inicio" replace />} />
       </Routes>
@@ -58,10 +59,10 @@ function Rotas() {
   );
 }
 
-function RotaAdmin() {
+function RotaAdmin({ children }: { children: ReactNode }) {
   const { ehSuperAdmin } = useAuth();
   if (!ehSuperAdmin) return <Navigate to="/inicio" replace />;
-  return <EmBreve titulo="Administração" fase="Fase 5" itens="item 11 do plano" />;
+  return <>{children}</>;
 }
 
 function Carregando(): ReactNode {
