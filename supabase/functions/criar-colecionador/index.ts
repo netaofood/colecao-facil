@@ -16,10 +16,15 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+// O navegador faz uma verificação prévia (OPTIONS) antes do POST e recusa
+// a chamada se algum cabeçalho enviado não estiver listado aqui.
+// O cliente do Supabase manda apikey e x-client-info além dos usuais.
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 function responder(corpo: unknown, status = 200) {
