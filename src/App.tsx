@@ -7,6 +7,8 @@ import { Inicio } from './pages/Inicio';
 import { Perfil } from './pages/Perfil';
 import { EmBreve } from './pages/EmBreve';
 import { Convites } from './pages/admin/Convites';
+import { Colecoes } from './pages/Colecoes';
+import { ColecaoDetalhe } from './pages/ColecaoDetalhe';
 import { T } from './theme';
 
 export default function App() {
@@ -39,10 +41,8 @@ function Rotas() {
       <Routes>
         <Route path="/inicio" element={<Inicio />} />
         <Route path="/perfil" element={<Perfil />} />
-        <Route
-          path="/colecoes"
-          element={<EmBreve titulo="Coleções" fase="Fase 3" itens="itens 6 e 7 do plano" />}
-        />
+        <Route path="/colecoes" element={<Colecoes />} />
+        <Route path="/colecoes/:id" element={<ColecaoDetalhe />} />
         <Route
           path="/trocas"
           element={<EmBreve titulo="Trocas" fase="Fase 6" itens="item 9 do plano" />}
