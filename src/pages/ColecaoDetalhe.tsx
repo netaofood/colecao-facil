@@ -23,6 +23,7 @@ import {
 import type { Colecao, Item, Subdivisao } from '../lib/tipos';
 import { RARIDADES } from '../lib/tipos';
 import { UploadImagem } from '../components/UploadImagem';
+import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
 
@@ -41,7 +42,7 @@ export function ColecaoDetalhe() {
     null
   );
   const [busca, setBusca] = useState('');
-  const [filtroSub, setFiltroSub] = useState('');
+  const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
   const [resumo, setResumo] = useState<string | null>(null);
   const [editando, setEditando] = useState<Item | null>(null);
 
@@ -73,8 +74,12 @@ export function ColecaoDetalhe() {
 
   const ehDono = perfil?.id === colecao.dono_id;
 
+  const removerItem = async (item: Item) => {
+    await apagarItem(item.id);
+    setItens((a) => a.filter((x) => x.id !== item.id));
+  };
+
   const filtrados = itens.filter((i) => {
-    if (filtroSub && i.subdivisao_id !== filtroSub) return false;
     if (!busca.trim()) return true;
     const t = busca.trim().toLowerCase();
     return (
@@ -83,6 +88,8 @@ export function ColecaoDetalhe() {
       (i.categoria ?? '').toLowerCase().includes(t)
     );
   });
+
+  const grupos = agrupar(itens, filtrados, subdivisoes);
 
   return (
     <div>
@@ -221,25 +228,6 @@ export function ColecaoDetalhe() {
               style={{ ...TS.input, paddingLeft: 36 }}
             />
           </div>
-          {subdivisoes.length > 0 && (
-            <select
-              value={filtroSub}
-              onChange={(e) => setFiltroSub(e.target.value)}
-              style={{
-                ...TS.input,
-                width: 'auto',
-                minWidth: 150,
-                colorScheme: 'dark',
-              }}
-            >
-              <option value="">Todas as subdivisões</option>
-              {subdivisoes.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nome}
-                </option>
-              ))}
-            </select>
-          )}
         </div>
       )}
 
@@ -254,27 +242,51 @@ export function ColecaoDetalhe() {
         />
       ) : filtrados.length === 0 ? (
         <Aviso texto="Nenhum item encontrado com esse filtro." />
+      ) : grupos.length === 1 && grupos[0].id === null ? (
+        <GradeCatalogo
+          itens={filtrados}
+          ehDono={ehDono}
+          aoEditar={setEditando}
+          aoApagar={removerItem}
+        />
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(112px, 1fr))',
-            gap: 8,
-          }}
-        >
-          {filtrados.map((item) => (
-            <CartaoItem
-              key={item.id}
-              item={item}
-              ehDono={ehDono}
-              aoEditar={() => setEditando(item)}
-              aoApagar={async () => {
-                await apagarItem(item.id);
-                setItens((a) => a.filter((x) => x.id !== item.id));
-              }}
-            />
-          ))}
-        </div>
+        grupos.map((g) => (
+          <BlocoSubdivisao
+            key={g.id ?? 'avulsos'}
+            titulo={g.nome}
+            contagem={g.total}
+            recolhido={recolhidos.has(g.id ?? 'avulsos')}
+            aoAlternar={() =>
+              setRecolhidos((r) => {
+                const novo = new Set(r);
+                const chave = g.id ?? 'avulsos';
+                if (novo.has(chave)) novo.delete(chave);
+                else novo.add(chave);
+                return novo;
+              })
+            }
+          >
+            {g.visiveis.length === 0 ? (
+              <div
+                style={{
+                  fontFamily: T.fontBody,
+                  fontSize: 12.5,
+                  color: T.textMuted,
+                  padding: '4px 2px',
+                }}
+              >
+                Nenhum item deste bloco na busca atual.
+              </div>
+            ) : (
+              <GradeCatalogo
+                itens={g.visiveis}
+                ehDono={ehDono}
+                aoEditar={setEditando}
+                aoApagar={removerItem}
+              />
+            )}
+          </BlocoSubdivisao>
+        ))
       )}
 
       {/* Zona de risco */}
@@ -741,6 +753,83 @@ function ModalSubdivisao({
         </button>
       </form>
     </Modal>
+  );
+}
+
+function agrupar(
+  todos: Item[],
+  visiveis: Item[],
+  subdivisoes: Subdivisao[]
+) {
+  const porSub = new Map<string | null, Item[]>();
+  for (const i of visiveis) {
+    if (!porSub.has(i.subdivisao_id)) porSub.set(i.subdivisao_id, []);
+    porSub.get(i.subdivisao_id)!.push(i);
+  }
+
+  const total = (chave: string | null) =>
+    todos.filter((i) => i.subdivisao_id === chave).length;
+
+  const lista: {
+    id: string | null;
+    nome: string;
+    visiveis: Item[];
+    total: number;
+  }[] = [];
+
+  for (const sub of subdivisoes) {
+    const t = total(sub.id);
+    if (t === 0) continue;
+    lista.push({
+      id: sub.id,
+      nome: sub.nome,
+      visiveis: porSub.get(sub.id) ?? [],
+      total: t,
+    });
+  }
+
+  const avulsos = total(null);
+  if (avulsos > 0) {
+    lista.push({
+      id: null,
+      nome: subdivisoes.length > 0 ? 'Sem subdivisão' : 'Todos os itens',
+      visiveis: porSub.get(null) ?? [],
+      total: avulsos,
+    });
+  }
+
+  return lista;
+}
+
+function GradeCatalogo({
+  itens,
+  ehDono,
+  aoEditar,
+  aoApagar,
+}: {
+  itens: Item[];
+  ehDono: boolean;
+  aoEditar: (i: Item) => void;
+  aoApagar: (i: Item) => Promise<void>;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(112px, 1fr))',
+        gap: 8,
+      }}
+    >
+      {itens.map((item) => (
+        <CartaoItem
+          key={item.id}
+          item={item}
+          ehDono={ehDono}
+          aoEditar={() => aoEditar(item)}
+          aoApagar={() => aoApagar(item)}
+        />
+      ))}
+    </div>
   );
 }
 

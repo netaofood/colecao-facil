@@ -32,6 +32,7 @@ import { BarraProgresso } from '../components/BarraProgresso';
 import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
+import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 
 type Filtro = 'todos' | 'falta' | 'tenho' | 'repetida';
 
@@ -53,7 +54,7 @@ export function MinhaColecao() {
   const [erro, setErro] = useState<string | null>(null);
 
   const [filtro, setFiltro] = useState<Filtro>('todos');
-  const [filtroSub, setFiltroSub] = useState('');
+  const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
   const [aberto, setAberto] = useState<Item | null>(null);
   const [conferencia, setConferencia] = useState(false);
   const [selecao, setSelecao] = useState<Set<string>>(new Set());
@@ -139,12 +140,88 @@ export function MinhaColecao() {
   const visiveis = useMemo(
     () =>
       itens.filter((i) => {
-        if (filtroSub && i.subdivisao_id !== filtroSub) return false;
         if (filtro === 'todos') return true;
         return statusDe(i.id) === filtro;
       }),
-    [itens, filtro, filtroSub, statusDe]
+    [itens, filtro, statusDe]
   );
+
+  const aoClicarItem = useCallback(
+    (item: Item) => {
+      if (selecao.size > 0) {
+        setSelecao((s) => {
+          const novo = new Set(s);
+          if (novo.has(item.id)) novo.delete(item.id);
+          else novo.add(item.id);
+          return novo;
+        });
+      } else if (conferencia) {
+        const atual = statusDe(item.id);
+        const proximo: StatusItem =
+          atual === 'falta' ? 'tenho' : atual === 'tenho' ? 'repetida' : 'falta';
+        void alterar(item, proximo);
+      } else {
+        setAberto(item);
+      }
+    },
+    [selecao, conferencia, statusDe, alterar]
+  );
+
+  /** Agrupa por subdivisão, na ordem cadastrada, com os avulsos no fim. */
+  const grupos = useMemo(() => {
+    const visiveisPorSub = new Map<string | null, Item[]>();
+    for (const i of visiveis) {
+      const chave = i.subdivisao_id;
+      if (!visiveisPorSub.has(chave)) visiveisPorSub.set(chave, []);
+      visiveisPorSub.get(chave)!.push(i);
+    }
+
+    // O progresso considera todos os itens do bloco, não só os filtrados
+    const contar = (chave: string | null) => {
+      let tenho = 0;
+      let total = 0;
+      for (const i of itens) {
+        if (i.subdivisao_id !== chave) continue;
+        total++;
+        const l = meus.get(i.id);
+        if (l && l.status !== 'falta') tenho++;
+      }
+      return { tenho, total };
+    };
+
+    const lista: {
+      id: string | null;
+      nome: string;
+      visiveis: Item[];
+      tenho: number;
+      total: number;
+    }[] = [];
+
+    for (const sub of subdivisoes) {
+      const { tenho, total } = contar(sub.id);
+      if (total === 0) continue;
+      lista.push({
+        id: sub.id,
+        nome: sub.nome,
+        visiveis: visiveisPorSub.get(sub.id) ?? [],
+        tenho,
+        total,
+      });
+    }
+
+    const avulsos = contar(null);
+    if (avulsos.total > 0) {
+      lista.push({
+        id: null,
+        nome: subdivisoes.length > 0 ? 'Sem subdivisão' : 'Todos os itens',
+        visiveis: visiveisPorSub.get(null) ?? [],
+        tenho: avulsos.tenho,
+        total: avulsos.total,
+      });
+    }
+
+    return lista;
+  }, [visiveis, itens, subdivisoes, meus]);
 
   if (carregando) return <Caixa texto="Carregando..." />;
   if (!colecao) return <Caixa texto={erro ?? 'Coleção não encontrada.'} erro />;
@@ -268,28 +345,6 @@ export function MinhaColecao() {
       <div
         style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}
       >
-        {subdivisoes.length > 0 && (
-          <select
-            value={filtroSub}
-            onChange={(e) => setFiltroSub(e.target.value)}
-            style={{
-              ...TS.input,
-              width: 'auto',
-              minWidth: 140,
-              padding: '9px 12px',
-              fontSize: 13,
-              colorScheme: 'dark',
-            }}
-          >
-            <option value="">Todas as subdivisões</option>
-            {subdivisoes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome}
-              </option>
-            ))}
-          </select>
-        )}
-
         <BotaoFerramenta
           ativa={conferencia}
           Icone={Zap}
@@ -341,41 +396,52 @@ export function MinhaColecao() {
               : 'Nenhum item neste filtro.'
           }
         />
+      ) : grupos.length === 1 && grupos[0].id === null ? (
+        // Sem subdivisões: grade corrida, como era antes
+        <Grade
+          itens={visiveis}
+          meus={meus}
+          selecao={selecao}
+          aoClicarItem={aoClicarItem}
+        />
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(76px, 1fr))',
-            gap: 7,
-          }}
-        >
-          {visiveis.map((item) => (
-            <Celula
-              key={item.id}
-              item={item}
-              linha={meus.get(item.id)}
-              selecionavel={selecao.size > 0}
-              selecionado={selecao.has(item.id)}
-              aoClicar={() => {
-                if (selecao.size > 0) {
-                  setSelecao((s) => {
-                    const novo = new Set(s);
-                    if (novo.has(item.id)) novo.delete(item.id);
-                    else novo.add(item.id);
-                    return novo;
-                  });
-                } else if (conferencia) {
-                  const atual = statusDe(item.id);
-                  const proximo: StatusItem =
-                    atual === 'falta' ? 'tenho' : atual === 'tenho' ? 'repetida' : 'falta';
-                  void alterar(item, proximo);
-                } else {
-                  setAberto(item);
-                }
-              }}
-            />
-          ))}
-        </div>
+        grupos.map((g) => (
+          <BlocoSubdivisao
+            key={g.id ?? 'avulsos'}
+            titulo={g.nome}
+            progresso={{ tenho: g.tenho, total: g.total }}
+            recolhido={recolhidos.has(g.id ?? 'avulsos')}
+            aoAlternar={() =>
+              setRecolhidos((r) => {
+                const novo = new Set(r);
+                const chave = g.id ?? 'avulsos';
+                if (novo.has(chave)) novo.delete(chave);
+                else novo.add(chave);
+                return novo;
+              })
+            }
+          >
+            {g.visiveis.length === 0 ? (
+              <div
+                style={{
+                  fontFamily: T.fontBody,
+                  fontSize: 12.5,
+                  color: T.textMuted,
+                  padding: '4px 2px',
+                }}
+              >
+                Nenhum item deste bloco no filtro atual.
+              </div>
+            ) : (
+              <Grade
+                itens={g.visiveis}
+                meus={meus}
+                selecao={selecao}
+                aoClicarItem={aoClicarItem}
+              />
+            )}
+          </BlocoSubdivisao>
+        ))
       )}
 
       {/* Compartilhar */}
@@ -425,6 +491,39 @@ export function MinhaColecao() {
 }
 
 /* -------------------------------------------------------------- */
+
+function Grade({
+  itens,
+  meus,
+  selecao,
+  aoClicarItem,
+}: {
+  itens: Item[];
+  meus: Map<string, ItemUsuario>;
+  selecao: Set<string>;
+  aoClicarItem: (item: Item) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(76px, 1fr))',
+        gap: 7,
+      }}
+    >
+      {itens.map((item) => (
+        <Celula
+          key={item.id}
+          item={item}
+          linha={meus.get(item.id)}
+          selecionavel={selecao.size > 0}
+          selecionado={selecao.has(item.id)}
+          aoClicar={() => aoClicarItem(item)}
+        />
+      ))}
+    </div>
+  );
+}
 
 function Celula({
   item,
