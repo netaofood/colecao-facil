@@ -35,6 +35,8 @@ import { msg } from '../lib/mensagens';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
 import { usePodeCadastrar } from '../components/AvisoAssinatura';
+import { UploadImagem } from '../components/UploadImagem';
+import { atualizarItem } from '../lib/api';
 import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 
 type Filtro = 'todos' | 'falta' | 'tenho' | 'repetida';
@@ -550,8 +552,18 @@ export function MinhaColecao() {
         <ModalItem
           item={aberto}
           linha={meus.get(aberto.id)}
+          ehDono={perfil?.id === colecao.dono_id}
           aoFechar={() => setAberto(null)}
           aoAlterar={(status, qtd) => void alterar(aberto, status, qtd)}
+          aoTrocarFoto={async (url) => {
+            await atualizarItem(aberto.id, { foto_url: url });
+            setItens((lista) =>
+              lista.map((i) =>
+                i.id === aberto.id ? { ...i, foto_url: url } : i
+              )
+            );
+            setAberto({ ...aberto, foto_url: url });
+          }}
         />
       )}
     </div>
@@ -707,13 +719,17 @@ function Celula({
 function ModalItem({
   item,
   linha,
+  ehDono,
   aoFechar,
   aoAlterar,
+  aoTrocarFoto,
 }: {
   item: Item;
   linha?: ItemUsuario;
+  ehDono: boolean;
   aoFechar: () => void;
   aoAlterar: (status: StatusItem, quantidade?: number) => void;
+  aoTrocarFoto: (url: string | null) => Promise<void>;
 }) {
   const status: StatusItem = linha?.status ?? 'falta';
   const qtd = linha?.quantidade_repetida ?? 1;
@@ -745,18 +761,47 @@ function ModalItem({
           overflow: 'hidden',
         }}
       >
-        {item.foto_url && (
-          <img
-            src={item.foto_url}
-            alt={item.nome}
+        {item.foto_url ? (
+          <div style={{ position: 'relative' }}>
+            <img
+              src={item.foto_url}
+              alt={item.nome}
+              style={{
+                width: '100%',
+                aspectRatio: '3 / 4',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+            {ehDono && (
+              <div style={{ position: 'absolute', top: 8, right: 8 }}>
+                <UploadImagem
+                  valor={null}
+                  aoMudar={(url) => void aoTrocarFoto(url)}
+                  pasta="itens"
+                  formato="quadrado"
+                  tamanho={38}
+                />
+              </div>
+            )}
+          </div>
+        ) : ehDono ? (
+          <div
             style={{
-              width: '100%',
-              aspectRatio: '3 / 4',
-              objectFit: 'cover',
-              display: 'block',
+              padding: '16px 18px 0',
+              display: 'flex',
+              justifyContent: 'center',
             }}
-          />
-        )}
+          >
+            <UploadImagem
+              valor={null}
+              aoMudar={(url) => void aoTrocarFoto(url)}
+              pasta="itens"
+              formato="retrato"
+              tamanho={104}
+            />
+          </div>
+        ) : null}
 
         <div style={{ padding: 18 }}>
           <div

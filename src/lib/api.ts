@@ -208,6 +208,7 @@ export interface NovoItem {
   raridade?: string | null;
   subdivisao_id?: string | null;
   observacao?: string | null;
+  foto_url?: string | null;
 }
 
 /**

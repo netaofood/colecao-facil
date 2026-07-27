@@ -75,6 +75,12 @@ Ligando esse modo, cada toque avança o item direto: falta vira tenho, tenho vir
 
 Clique em **Selecionar**, toque nos itens e marque todos de uma vez.
 
+## Foto do item
+
+Toque num item e envie a foto ali mesmo. Se ele já tiver foto, o botão no canto superior direito troca por outra.
+
+A foto aparece na grade, colorida quando você tem o item e cinza quando falta.
+
 ## Blocos por subdivisão
 
 Se a coleção tiver subdivisões, cada uma vira uma caixa com o próprio progresso. Clique no título da caixa para recolher.
