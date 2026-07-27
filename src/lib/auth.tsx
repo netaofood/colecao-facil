@@ -120,15 +120,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!token) throw new Error('Sessão expirada. Entre novamente.');
 
       const base = import.meta.env.VITE_SUPABASE_URL;
-      const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       let resposta: Response;
       try {
+        // Só os dois cabeçalhos que a função autoriza na verificação prévia.
+        // Mandar qualquer outro faz o navegador barrar antes de sair.
         resposta = await fetch(`${base}/functions/v1/criar-colecionador`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            apikey: anon,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
