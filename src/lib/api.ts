@@ -681,19 +681,26 @@ function limparLista(valores: (string | null)[]): string[] {
   );
 }
 
-/** Categorias já usadas nos itens de uma coleção. */
-export async function listarCategoriasDosItens(
-  colecaoId: string
+/**
+ * Categorias já usadas em TODOS os itens das coleções do usuário.
+ * A sugestão acompanha a pessoa, não a coleção aberta.
+ */
+export async function listarCategoriasDoUsuario(
+  usuarioId: string
 ): Promise<string[]> {
   const { data, error } = await supabase
     .from('itens')
-    .select('categoria')
-    .eq('colecao_id', colecaoId)
-    .not('categoria', 'is', null);
+    .select('categoria, colecoes!inner(dono_id)')
+    .eq('colecoes.dono_id', usuarioId)
+    .not('categoria', 'is', null)
+    .limit(3000);
 
   if (error) throw new Error(error.message);
-  return limparLista((data ?? []).map((l) => (l as { categoria: string | null }).categoria));
+  return limparLista(
+    (data ?? []).map((l) => (l as { categoria: string | null }).categoria)
+  );
 }
+
 
 /** Categorias já usadas nas coleções do próprio usuário. */
 export async function listarCategoriasDasColecoes(

@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
-import { ListOrdered, Table, FileUp, Plus, Trash2 } from 'lucide-react';
+import { ListOrdered, Table, FileUp, Plus, Trash2, Check, X } from 'lucide-react';
 import { T, TS } from '../theme';
 import { RARIDADES } from '../lib/tipos';
+import { useAuth } from '../lib/auth';
 import type { Subdivisao } from '../lib/tipos';
-import { inserirItens, listarCategoriasDosItens, type NovoItem } from '../lib/api';
+import {
+  inserirItens,
+  listarCategoriasDoUsuario,
+  criarSubdivisao,
+  type NovoItem,
+} from '../lib/api';
 import { InputCategoria } from './InputCategoria';
 
 type Caminho = 'serie' | 'grid' | 'csv';
@@ -22,13 +28,19 @@ export function AdicionarItens({
   aoConcluir,
 }: Props) {
   const [caminho, setCaminho] = useState<Caminho>('serie');
+  const { perfil } = useAuth();
   const [categorias, setCategorias] = useState<string[]>([]);
 
+  // Subdivisões em estado local, para a criação inline aparecer na hora
+  const [subs, setSubs] = useState<Subdivisao[]>(subdivisoes);
+  useEffect(() => setSubs(subdivisoes), [subdivisoes]);
+
   useEffect(() => {
-    listarCategoriasDosItens(colecaoId)
+    if (!perfil) return;
+    listarCategoriasDoUsuario(perfil.id)
       .then(setCategorias)
       .catch(() => setCategorias([]));
-  }, [colecaoId]);
+  }, [perfil]);
   const [subdivisaoId, setSubdivisaoId] = useState<string>('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -87,26 +99,16 @@ export function AdicionarItens({
         />
       </div>
 
-      {subdivisoes.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <label style={TS.label} htmlFor="sub">
-            Adicionar dentro de
-          </label>
-          <select
-            id="sub"
-            value={subdivisaoId}
-            onChange={(e) => setSubdivisaoId(e.target.value)}
-            style={{ ...TS.input, colorScheme: 'dark' }}
-          >
-            <option value="">Sem subdivisão</option>
-            {subdivisoes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <SeletorSubdivisao
+        colecaoId={colecaoId}
+        subdivisoes={subs}
+        valor={subdivisaoId}
+        aoMudar={setSubdivisaoId}
+        aoCriar={(nova) => {
+          setSubs((a) => [...a, nova]);
+          setSubdivisaoId(nova.id);
+        }}
+      />
 
       {erro && (
         <div
@@ -732,5 +734,155 @@ function Aba({
         {texto}
       </div>
     </button>
+  );
+}
+
+
+/* -------------------------------------------------------------- */
+/* SELETOR DE SUBDIVISÃO, COM CRIAÇÃO SEM SAIR DA TELA             */
+/* -------------------------------------------------------------- */
+
+const NOVA = '__nova__';
+
+function SeletorSubdivisao({
+  colecaoId,
+  subdivisoes,
+  valor,
+  aoMudar,
+  aoCriar,
+}: {
+  colecaoId: string;
+  subdivisoes: Subdivisao[];
+  valor: string;
+  aoMudar: (v: string) => void;
+  aoCriar: (nova: Subdivisao) => void;
+}) {
+  const [criando, setCriando] = useState(false);
+  const [nome, setNome] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function salvar() {
+    const limpo = nome.trim();
+    if (!limpo) return;
+
+    const repetida = subdivisoes.find(
+      (s) => s.nome.toLowerCase() === limpo.toLowerCase()
+    );
+    if (repetida) {
+      aoCriar(repetida);
+      encerrar();
+      return;
+    }
+
+    setErro(null);
+    setSalvando(true);
+    try {
+      const nova = await criarSubdivisao(colecaoId, limpo, subdivisoes.length);
+      aoCriar(nova);
+      encerrar();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Erro ao criar.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  function encerrar() {
+    setCriando(false);
+    setNome('');
+    setErro(null);
+  }
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={TS.label} htmlFor="sub">
+        Adicionar dentro de
+      </label>
+
+      {criando ? (
+        <>
+          <div style={{ display: 'flex', gap: 7 }}>
+            <input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void salvar();
+                }
+                if (e.key === 'Escape') encerrar();
+              }}
+              placeholder="ex: Ouro"
+              autoFocus
+              style={{ ...TS.input, flex: 1 }}
+            />
+            <button
+              type="button"
+              onClick={() => void salvar()}
+              disabled={salvando || !nome.trim()}
+              aria-label="Criar subdivisão"
+              style={{
+                ...TS.botaoPrimario,
+                padding: '0 14px',
+                display: 'flex',
+                alignItems: 'center',
+                opacity: salvando || !nome.trim() ? 0.5 : 1,
+              }}
+            >
+              <Check size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={encerrar}
+              aria-label="Cancelar"
+              style={{
+                background: 'transparent',
+                border: `1px solid ${T.border}`,
+                borderRadius: T.radius,
+                color: T.textMuted,
+                padding: '0 12px',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={17} />
+            </button>
+          </div>
+
+          {erro && (
+            <div
+              style={{
+                fontFamily: T.fontBody,
+                fontSize: 12,
+                color: T.erro,
+                marginTop: 6,
+              }}
+            >
+              {erro}
+            </div>
+          )}
+        </>
+      ) : (
+        <select
+          id="sub"
+          value={valor}
+          onChange={(e) => {
+            if (e.target.value === NOVA) setCriando(true);
+            else aoMudar(e.target.value);
+          }}
+          style={{ ...TS.input, colorScheme: 'dark' }}
+        >
+          <option value="">Sem subdivisão</option>
+          {subdivisoes.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nome}
+            </option>
+          ))}
+          <option value={NOVA}>+ Nova subdivisão...</option>
+        </select>
+      )}
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import {
   apagarItem,
   apagarColecao,
   atualizarItem,
+  listarCategoriasDoUsuario,
 } from '../lib/api';
 import type { Colecao, Item, Subdivisao } from '../lib/tipos';
 import { RARIDADES } from '../lib/tipos';
@@ -48,10 +49,7 @@ export function ColecaoDetalhe() {
   const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
   const [resumo, setResumo] = useState<string | null>(null);
   const [editando, setEditando] = useState<Item | null>(null);
-  const categorias = useMemo(
-    () => categoriasDe(itens),
-    [itens]
-  );
+  const [categorias, setCategorias] = useState<string[]>([]);
 
   const carregar = useCallback(async () => {
     if (!id) return;
@@ -74,6 +72,13 @@ export function ColecaoDetalhe() {
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  useEffect(() => {
+    if (!perfil) return;
+    listarCategoriasDoUsuario(perfil.id)
+      .then(setCategorias)
+      .catch(() => setCategorias([]));
+  }, [perfil, itens.length]);
 
   if (carregando) return <Aviso texto="Carregando..." />;
   if (erro) return <Aviso texto={erro} erro />;
@@ -892,16 +897,3 @@ function Aviso({ texto, erro = false }: { texto: string; erro?: boolean }) {
   );
 }
 
-/** Categorias já usadas nos itens carregados, sem repetir. */
-function categoriasDe(itens: Item[]): string[] {
-  const vistos = new Map<string, string>();
-  for (const i of itens) {
-    const t = i.categoria?.trim();
-    if (!t) continue;
-    const chave = t.toLowerCase();
-    if (!vistos.has(chave)) vistos.set(chave, t);
-  }
-  return [...vistos.values()].sort((a, b) =>
-    a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
-  );
-}
