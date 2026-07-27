@@ -10,9 +10,7 @@ import { Colecoes } from './pages/Colecoes';
 import { ColecaoDetalhe } from './pages/ColecaoDetalhe';
 import { MinhaColecao } from './pages/MinhaColecao';
 import { Trocas } from './pages/Trocas';
-import { Descobrir } from './pages/Descobrir';
 import { Relatorios } from './pages/Relatorios';
-import { PerfilPublicoPagina } from './pages/PerfilPublicoPagina';
 import { T } from './theme';
 import { useTema } from './hooks/useTema';
 
@@ -38,22 +36,12 @@ function Rotas() {
   if (!session) {
     return (
       <Routes>
-        <Route path="/u/:apelido" element={<PerfilPublicoPagina />} />
         <Route path="/login" element={<Login />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }
 
-  return (
-    <Routes>
-      <Route path="/u/:apelido" element={<PerfilPublicoPagina />} />
-      <Route path="*" element={<AppLogado />} />
-    </Routes>
-  );
-}
-
-function AppLogado() {
   return (
     <Layout>
       <Routes>
@@ -64,7 +52,6 @@ function AppLogado() {
         <Route path="/colecoes/:id" element={<MinhaColecao />} />
         <Route path="/colecoes/:id/catalogo" element={<ColecaoDetalhe />} />
         <Route path="/trocas" element={<Trocas />} />
-        <Route path="/descobrir" element={<Descobrir />} />
         <Route path="/admin" element={<RotaAdmin><Admin /></RotaAdmin>} />
         <Route path="/login" element={<Navigate to="/inicio" replace />} />
         <Route path="*" element={<Navigate to="/inicio" replace />} />

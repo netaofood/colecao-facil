@@ -1,17 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Download, Library, BadgeCheck, Users } from 'lucide-react';
+import { Plus, Library } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
 import {
   listarMinhasColecoes,
-  listarOficiais,
   criarColecao,
-  adotarColecao,
   listarCategoriasDasColecoes,
 } from '../lib/api';
 import { InputCategoria } from '../components/InputCategoria';
-import type { ColecaoComProgresso, Colecao } from '../lib/tipos';
+import type { ColecaoComProgresso } from '../lib/tipos';
 import { BarraProgresso } from '../components/BarraProgresso';
 
 export function Colecoes() {
@@ -21,7 +19,7 @@ export function Colecoes() {
   const [minhas, setMinhas] = useState<ColecaoComProgresso[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [modal, setModal] = useState<'branco' | 'oficial' | null>(null);
+  const [modal, setModal] = useState<'branco' | null>(null);
   const [categorias, setCategorias] = useState<string[]>([]);
 
   useEffect(() => {
@@ -72,20 +70,14 @@ export function Colecoes() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
           gap: 12,
           marginBottom: 28,
+          maxWidth: 380,
         }}
       >
         <PortaEntrada
           Icone={Plus}
-          titulo="Começar em branco"
-          texto="Você cadastra os itens do seu jeito."
+          titulo="Nova coleção"
+          texto="Cadastre os itens do seu jeito."
           aoClicar={() => setModal('branco')}
-        />
-        <PortaEntrada
-          Icone={Download}
-          titulo="Adotar coleção pronta"
-          texto="Catálogo já montado. É só marcar o que você tem."
-          aoClicar={() => setModal('oficial')}
-          destaque
         />
       </div>
 
@@ -137,16 +129,6 @@ export function Colecoes() {
         />
       )}
 
-      {modal === 'oficial' && (
-        <ModalAdotar
-          aoFechar={() => setModal(null)}
-          aoAdotar={async (colecaoId) => {
-            await adotarColecao(perfil!.id, colecaoId);
-            setModal(null);
-            navigate(`/colecoes/${colecaoId}`);
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -239,12 +221,6 @@ function CartaoColecao({ colecao }: { colecao: ColecaoComProgresso }) {
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-        {colecao.oficial && (
-          <Etiqueta Icone={BadgeCheck} texto="Oficial" cor={T.neon} />
-        )}
-        {colecao.adotada && (
-          <Etiqueta Icone={Users} texto="Adotada" cor={T.textMuted} />
-        )}
         {colecao.total_repetidas > 0 && (
           <Etiqueta
             texto={`${colecao.total_repetidas} repetida${colecao.total_repetidas > 1 ? 's' : ''}`}
@@ -267,7 +243,7 @@ function Etiqueta({
   texto,
   cor,
 }: {
-  Icone?: typeof BadgeCheck;
+  Icone?: typeof Library;
   texto: string;
   cor: string;
 }) {
@@ -413,66 +389,6 @@ function ModalNovaColecao({
   );
 }
 
-function ModalAdotar({
-  aoFechar,
-  aoAdotar,
-}: {
-  aoFechar: () => void;
-  aoAdotar: (colecaoId: string) => Promise<void>;
-}) {
-  const [oficiais, setOficiais] = useState<Colecao[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-
-  useEffect(() => {
-    listarOficiais()
-      .then(setOficiais)
-      .catch((e) => setErro(e.message))
-      .finally(() => setCarregando(false));
-  }, []);
-
-  return (
-    <Modal titulo="Adotar coleção pronta" aoFechar={aoFechar}>
-      {carregando ? (
-        <Aviso texto="Carregando..." />
-      ) : erro ? (
-        <ErroModal>{erro}</ErroModal>
-      ) : oficiais.length === 0 ? (
-        <Aviso texto="Nenhuma coleção oficial publicada ainda." />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {oficiais.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => void aoAdotar(c.id)}
-              style={{
-                ...TS.card,
-                textAlign: 'left',
-                cursor: 'pointer',
-                padding: 14,
-              }}
-            >
-              <div style={{ ...TS.titulo, fontSize: 14 }}>{c.nome}</div>
-              <div
-                style={{
-                  fontFamily: T.fontBody,
-                  fontSize: 12,
-                  color: T.textSecondary,
-                  marginTop: 3,
-                }}
-              >
-                {c.descricao ||
-                  [c.categoria, c.ano].filter(Boolean).join(' · ') ||
-                  'Sem descrição'}
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </Modal>
-  );
-}
 
 /* -------------------------------------------------------------- */
 

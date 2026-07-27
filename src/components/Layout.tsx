@@ -4,7 +4,6 @@ import {
   LayoutGrid,
   Library,
   Repeat,
-  Search,
   User,
   BarChart3,
   Shield,
@@ -30,8 +29,7 @@ const DESTINOS: Destino[] = [
   { para: '/inicio', rotulo: 'Início', Icone: LayoutGrid, noMobile: true },
   { para: '/colecoes', rotulo: 'Coleções', Icone: Library, noMobile: true },
   { para: '/trocas', rotulo: 'Trocas', Icone: Repeat, noMobile: true },
-  { para: '/descobrir', rotulo: 'Descobrir', Icone: Search, noMobile: true },
-  { para: '/relatorios', rotulo: 'Relatórios', Icone: BarChart3, noMobile: false },
+  { para: '/relatorios', rotulo: 'Relatórios', Icone: BarChart3, noMobile: true },
   { para: '/perfil', rotulo: 'Perfil', Icone: User, noMobile: true },
   { para: '/admin', rotulo: 'Admin', Icone: Shield, noMobile: false, soAdmin: true },
 ];

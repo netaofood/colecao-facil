@@ -5,12 +5,15 @@ import { T } from '../theme';
 interface BotaoCopiarLinkProps {
   /** URL a copiar. Se omitido, usa a URL atual. */
   url?: string;
+  /** Texto livre a copiar. Tem prioridade sobre a URL. */
+  texto?: string;
   variant?: 'full' | 'compact' | 'icone';
   rotulo?: string;
 }
 
 export function BotaoCopiarLink({
   url,
+  texto,
   variant = 'full',
   rotulo = 'Copiar link',
 }: BotaoCopiarLinkProps) {
@@ -24,7 +27,7 @@ export function BotaoCopiarLink({
   }, []);
 
   async function copiar() {
-    const alvo = url ?? window.location.href;
+    const alvo = texto ?? url ?? window.location.href;
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(alvo);
@@ -43,7 +46,7 @@ export function BotaoCopiarLink({
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopiado(false), 2000);
     } catch {
-      window.prompt('Copie o link:', alvo);
+      window.prompt('Copie o conteúdo:', alvo);
     }
   }
 

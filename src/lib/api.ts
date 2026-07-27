@@ -12,65 +12,35 @@ import type {
 /* COLEÇÕES                                                          */
 /* ---------------------------------------------------------------- */
 
-/** Coleções que o usuário criou ou adotou, com o progresso de cada uma. */
+/** Coleções do usuário, com o progresso de cada uma. */
 export async function listarMinhasColecoes(
   usuarioId: string
 ): Promise<ColecaoComProgresso[]> {
-  const [proprias, adotadas] = await Promise.all([
-    supabase
-      .from('colecoes')
-      .select('*')
-      .eq('dono_id', usuarioId)
-      .eq('arquivada', false)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('colecoes_usuario')
-      .select('colecao_id, colecoes(*)')
-      .eq('usuario_id', usuarioId),
-  ]);
+  const { data, error } = await supabase
+    .from('colecoes')
+    .select('*')
+    .eq('dono_id', usuarioId)
+    .eq('arquivada', false)
+    .order('created_at', { ascending: false });
 
-  if (proprias.error) throw new Error(proprias.error.message);
-  if (adotadas.error) throw new Error(adotadas.error.message);
+  if (error) throw new Error(error.message);
 
-  const mapa = new Map<string, { colecao: Colecao; adotada: boolean }>();
+  const colecoes = (data ?? []) as Colecao[];
+  if (colecoes.length === 0) return [];
 
-  for (const c of (proprias.data ?? []) as Colecao[]) {
-    mapa.set(c.id, { colecao: c, adotada: false });
-  }
-  for (const linha of adotadas.data ?? []) {
-    const c = (linha as unknown as { colecoes: Colecao }).colecoes;
-    if (c && !c.arquivada && !mapa.has(c.id)) {
-      mapa.set(c.id, { colecao: c, adotada: true });
-    }
-  }
+  const progresso = await calcularProgresso(
+    colecoes.map((c) => c.id),
+    usuarioId
+  );
 
-  const ids = [...mapa.keys()];
-  if (ids.length === 0) return [];
-
-  const progresso = await calcularProgresso(ids, usuarioId);
-
-  return [...mapa.values()].map(({ colecao, adotada }) => ({
-    ...colecao,
-    adotada,
-    ...(progresso.get(colecao.id) ?? {
+  return colecoes.map((c) => ({
+    ...c,
+    ...(progresso.get(c.id) ?? {
       total_itens: 0,
       total_tenho: 0,
       total_repetidas: 0,
     }),
   }));
-}
-
-/** Coleções oficiais publicadas pelo super admin (item 6.3). */
-export async function listarOficiais(): Promise<Colecao[]> {
-  const { data, error } = await supabase
-    .from('colecoes')
-    .select('*')
-    .eq('oficial', true)
-    .eq('arquivada', false)
-    .order('nome');
-
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Colecao[];
 }
 
 export async function buscarColecao(id: string): Promise<Colecao | null> {
@@ -90,7 +60,6 @@ export async function criarColecao(dados: {
   descricao?: string | null;
   categoria?: string | null;
   ano?: number | null;
-  oficial?: boolean;
   visibilidade?: 'privada' | 'publica';
 }): Promise<Colecao> {
   const { data, error } = await supabase
@@ -101,7 +70,6 @@ export async function criarColecao(dados: {
       descricao: dados.descricao?.trim() || null,
       categoria: dados.categoria?.trim() || null,
       ano: dados.ano ?? null,
-      oficial: dados.oficial ?? false,
       visibilidade: dados.visibilidade ?? 'privada',
     })
     .select()
@@ -121,32 +89,6 @@ export async function atualizarColecao(
 
 export async function apagarColecao(id: string): Promise<void> {
   const { error } = await supabase.from('colecoes').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-}
-
-/** Item 6.4: adotar não copia o catálogo, só cria o vínculo. */
-export async function adotarColecao(
-  usuarioId: string,
-  colecaoId: string
-): Promise<void> {
-  const { error } = await supabase
-    .from('colecoes_usuario')
-    .insert({ usuario_id: usuarioId, colecao_id: colecaoId });
-
-  // 23505 = já adotada, não é erro para o usuário
-  if (error && error.code !== '23505') throw new Error(error.message);
-}
-
-export async function abandonarColecao(
-  usuarioId: string,
-  colecaoId: string
-): Promise<void> {
-  const { error } = await supabase
-    .from('colecoes_usuario')
-    .delete()
-    .eq('usuario_id', usuarioId)
-    .eq('colecao_id', colecaoId);
-
   if (error) throw new Error(error.message);
 }
 
@@ -420,193 +362,9 @@ export async function marcarVarios(
 /* PERFIS PÚBLICOS E DESCOBERTA (itens 10 e 9)                       */
 /* ---------------------------------------------------------------- */
 
-export interface PerfilPublico {
-  id: string;
-  apelido: string;
-  nome: string | null;
-  cidade: string | null;
-  estado: string | null;
-  foto_url: string | null;
-  whatsapp: string | null;
-  created_at: string;
-}
-
-export async function buscarPerfilPublico(
-  apelido: string
-): Promise<PerfilPublico | null> {
-  const { data, error } = await supabase
-    .from('perfis_publicos')
-    .select('*')
-    .eq('apelido', apelido.toLowerCase())
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return data as PerfilPublico | null;
-}
-
-export async function listarPerfisPublicos(
-  termo = ''
-): Promise<PerfilPublico[]> {
-  let q = supabase.from('perfis_publicos').select('*').limit(60);
-
-  if (termo.trim()) {
-    const t = `%${termo.trim()}%`;
-    q = q.or(`apelido.ilike.${t},nome.ilike.${t},cidade.ilike.${t}`);
-  }
-
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
-  return (data ?? []) as PerfilPublico[];
-}
-
-export interface Match {
-  perfil: PerfilPublico;
-  /** Itens que ele tem repetido e eu não tenho */
-  eleTem: Item[];
-  /** Itens que eu tenho repetido e ele não tem */
-  euTenho: Item[];
-}
-
-/**
- * Item 9.1 — cruza minhas repetidas com as dos outros.
- * Só enxerga quem ligou o perfil público (a RLS garante isso).
- */
-export async function buscarMatches(
-  usuarioId: string,
-  colecaoId: string
-): Promise<Match[]> {
-  const itens = await listarItens(colecaoId);
-  if (itens.length === 0) return [];
-
-  const porId = new Map(itens.map((i) => [i.id, i]));
-  const idsItens = itens.map((i) => i.id);
-
-  const meus = await listarMeusItens(usuarioId, idsItens);
-
-  const minhasRepetidas = new Set<string>();
-  const tenhoAlgum = new Set<string>();
-  for (const [itemId, linha] of meus) {
-    if (linha.status !== 'falta') tenhoAlgum.add(itemId);
-    if (linha.status === 'repetida') minhasRepetidas.add(itemId);
-  }
-  const meusFaltantes = idsItens.filter((id) => !tenhoAlgum.has(id));
-
-  // Repetidas dos outros nesta coleção
-  const repetidasAlheias = new Map<string, Set<string>>();
-  const BLOCO = 300;
-  for (let i = 0; i < idsItens.length; i += BLOCO) {
-    const { data, error } = await supabase
-      .from('itens_usuario')
-      .select('usuario_id, item_id')
-      .eq('status', 'repetida')
-      .neq('usuario_id', usuarioId)
-      .in('item_id', idsItens.slice(i, i + BLOCO));
-
-    if (error) throw new Error(error.message);
-    for (const l of (data ?? []) as { usuario_id: string; item_id: string }[]) {
-      if (!repetidasAlheias.has(l.usuario_id)) {
-        repetidasAlheias.set(l.usuario_id, new Set());
-      }
-      repetidasAlheias.get(l.usuario_id)!.add(l.item_id);
-    }
-  }
-
-  if (repetidasAlheias.size === 0) return [];
-
-  // O que cada um já tem (para saber o que falta a ele)
-  const temAlgum = new Map<string, Set<string>>();
-  const outrosIds = [...repetidasAlheias.keys()];
-  for (let i = 0; i < idsItens.length; i += BLOCO) {
-    const { data, error } = await supabase
-      .from('itens_usuario')
-      .select('usuario_id, item_id, status')
-      .in('usuario_id', outrosIds)
-      .in('item_id', idsItens.slice(i, i + BLOCO));
-
-    if (error) throw new Error(error.message);
-    for (const l of (data ?? []) as {
-      usuario_id: string;
-      item_id: string;
-      status: string;
-    }[]) {
-      if (l.status === 'falta') continue;
-      if (!temAlgum.has(l.usuario_id)) temAlgum.set(l.usuario_id, new Set());
-      temAlgum.get(l.usuario_id)!.add(l.item_id);
-    }
-  }
-
-  const { data: perfis, error: erroPerfis } = await supabase
-    .from('perfis_publicos')
-    .select('*')
-    .in('id', outrosIds);
-
-  if (erroPerfis) throw new Error(erroPerfis.message);
-
-  const matches: Match[] = [];
-  for (const perfil of (perfis ?? []) as PerfilPublico[]) {
-    const dele = repetidasAlheias.get(perfil.id) ?? new Set();
-    const jaTem = temAlgum.get(perfil.id) ?? new Set();
-
-    const eleTem = meusFaltantes
-      .filter((id) => dele.has(id))
-      .map((id) => porId.get(id)!)
-      .filter(Boolean);
-
-    const euTenho = [...minhasRepetidas]
-      .filter((id) => !jaTem.has(id))
-      .map((id) => porId.get(id)!)
-      .filter(Boolean);
-
-    if (eleTem.length > 0 || euTenho.length > 0) {
-      matches.push({ perfil, eleTem, euTenho });
-    }
-  }
-
-  // Quem fecha troca dos dois lados aparece primeiro
-  return matches.sort((a, b) => {
-    const pesoA = Math.min(a.eleTem.length, a.euTenho.length) * 100 + a.eleTem.length;
-    const pesoB = Math.min(b.eleTem.length, b.euTenho.length) * 100 + b.eleTem.length;
-    return pesoB - pesoA;
-  });
-}
-
 /* ---------------------------------------------------------------- */
 /* PÁGINA PÚBLICA DO COLECIONADOR (item 10.1)                        */
 /* ---------------------------------------------------------------- */
-
-export interface RepetidaPublica {
-  item: Item;
-  colecaoNome: string;
-  quantidade: number;
-}
-
-/**
- * Repetidas que o colecionador tem disponíveis para troca.
- * A RLS só devolve isso se o perfil dele for público.
- */
-export async function listarRepetidasPublicas(
-  usuarioId: string
-): Promise<RepetidaPublica[]> {
-  const { data, error } = await supabase
-    .from('itens_usuario')
-    .select('quantidade_repetida, itens(*, colecoes(nome))')
-    .eq('usuario_id', usuarioId)
-    .eq('status', 'repetida')
-    .limit(200);
-
-  if (error) throw new Error(error.message);
-
-  return ((data ?? []) as unknown as {
-    quantidade_repetida: number;
-    itens: (Item & { colecoes: { nome: string } | null }) | null;
-  }[])
-    .filter((l) => l.itens)
-    .map((l) => ({
-      item: l.itens!,
-      colecaoNome: l.itens!.colecoes?.nome ?? 'Coleção',
-      quantidade: l.quantidade_repetida,
-    }));
-}
 
 /* ---------------------------------------------------------------- */
 /* UPLOAD DE IMAGEM (item 7.5)                                       */

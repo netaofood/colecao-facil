@@ -57,7 +57,6 @@ export interface ColecaoComProgresso extends Colecao {
   total_itens: number;
   total_tenho: number;
   total_repetidas: number;
-  adotada: boolean;
 }
 
 export function porcentagem(tenho: number, total: number): number {

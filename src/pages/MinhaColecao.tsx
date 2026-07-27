@@ -32,6 +32,8 @@ import { BarraProgresso } from '../components/BarraProgresso';
 import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
+import { AdicionarItens } from '../components/AdicionarItens';
+import { Modal } from './Colecoes';
 import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 
 type Filtro = 'todos' | 'falta' | 'tenho' | 'repetida';
@@ -57,6 +59,8 @@ export function MinhaColecao() {
   const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
   const [aberto, setAberto] = useState<Item | null>(null);
   const [conferencia, setConferencia] = useState(false);
+  const [adicionando, setAdicionando] = useState(false);
+  const [resumo, setResumo] = useState<string | null>(null);
   const [selecao, setSelecao] = useState<Set<string>>(new Set());
 
   const carregar = useCallback(async () => {
@@ -253,19 +257,57 @@ export function MinhaColecao() {
       </h1>
       <div
         style={{
-          fontFamily: T.fontBody,
-          fontSize: 12.5,
-          color: T.textMuted,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
           marginBottom: 16,
         }}
       >
+        <button
+          type="button"
+          onClick={() => setAdicionando(true)}
+          style={{
+            ...TS.botaoPrimario,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 7,
+            padding: '10px 16px',
+          }}
+        >
+          <Plus size={16} />
+          Adicionar itens
+        </button>
+
         <Link
           to={`/colecoes/${colecao.id}/catalogo`}
-          style={{ color: T.textSecondary, textDecoration: 'underline' }}
+          style={{
+            fontFamily: T.fontBody,
+            fontSize: 12.5,
+            color: T.textSecondary,
+            textDecoration: 'underline',
+          }}
         >
           Editar catálogo
         </Link>
       </div>
+
+      {resumo && (
+        <div
+          style={{
+            background: T.tenhoFaint,
+            border: `1px solid ${T.tenho}`,
+            borderRadius: T.radiusSm,
+            padding: '10px 12px',
+            marginBottom: 14,
+            fontSize: 13,
+            color: T.tenho,
+            fontFamily: T.fontBody,
+          }}
+        >
+          {resumo}
+        </div>
+      )}
 
       {/* Progresso */}
       <div style={{ ...TS.card, marginBottom: 16 }}>
@@ -476,6 +518,26 @@ export function MinhaColecao() {
             </div>
           </div>
         </div>
+      )}
+
+      {adicionando && (
+        <Modal titulo="Adicionar itens" aoFechar={() => setAdicionando(false)}>
+          <AdicionarItens
+            colecaoId={colecao.id}
+            subdivisoes={subdivisoes}
+            ordemInicial={itens.length}
+            aoConcluir={async ({ inseridos, duplicados }) => {
+              setAdicionando(false);
+              setResumo(
+                duplicados > 0
+                  ? `${inseridos} itens adicionados. ${duplicados} ignorados por número repetido.`
+                  : `${inseridos} itens adicionados.`
+              );
+              await carregar();
+              setTimeout(() => setResumo(null), 6000);
+            }}
+          />
+        </Modal>
       )}
 
       {aberto && (

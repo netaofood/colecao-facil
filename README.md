@@ -45,12 +45,23 @@ As migrations ficam em `supabase/`, na ordem:
 
 Rode pelo SQL Editor do painel do Supabase.
 
+### Escopo
+
+O app é de organização pessoal. Cada colecionador é dono das próprias
+coleções; não existe adoção, catálogo compartilhado nem perfil público.
+
+O compartilhamento acontece só pelos botões de WhatsApp e copiar.
+
 ### Perfis de acesso
 
 | Perfil | Quem é |
 |---|---|
 | `super_admin` | Definido por e-mail no trigger de signup. Publica coleções oficiais e modera. |
 | `colecionador` | Todo o resto. Dono das próprias coleções. |
+
+> As tabelas `colecoes_usuario`, `trocas` e `trocas_itens` continuam no banco,
+> mas não são mais usadas pelo app. Ficaram para não exigir migration de
+> remoção; podem ser derrubadas quando não houver dúvida sobre o rumo.
 
 ## Estrutura
 
@@ -95,8 +106,7 @@ Nada de tela duplicada.
 | 6. Coleções | ✅ |
 | 7. Catálogo de itens | ✅ |
 | 8. Minha coleção (tenho/falta/repetida) | ✅ |
-| 9. Trocas | ✅ |
-| 10. Perfil público e descoberta | ✅ |
+| 9. Trocas (lista para compartilhar) | ✅ |
 | 11. Painel Super Admin | ✅ |
 | 12. Relatórios | ✅ |
 | 13. Infra | ✅ |
@@ -108,11 +118,6 @@ Rodar em ordem no SQL Editor do Supabase:
 - `0000_reset.sql` — derruba tudo. Só para recriar do zero.
 - `0001_init.sql` — schema completo.
 - `0002_convites_termos_privacidade.sql` — convites, idade mínima, termos, perfil público.
-
-## Rotas públicas
-
-`/u/{apelido}` — página pública do colecionador, acessível sem login.
-Só aparece se o colecionador tiver ligado "Aparecer nas buscas" no perfil.
 
 ## Pendências conhecidas
 

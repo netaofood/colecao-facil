@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
-import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
-import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
-import { msg } from '../lib/mensagens';
 import { UploadImagem } from '../components/UploadImagem';
 
 export function Perfil() {
@@ -16,7 +13,6 @@ export function Perfil() {
   const [estado, setEstado] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [whatsappPublico, setWhatsappPublico] = useState(false);
-  const [perfilPublico, setPerfilPublico] = useState(false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -30,15 +26,11 @@ export function Perfil() {
     setEstado(perfil.estado ?? '');
     setWhatsapp(perfil.whatsapp ?? '');
     setWhatsappPublico(perfil.whatsapp_publico);
-    setPerfilPublico(perfil.perfil_publico);
     setFotoUrl(perfil.foto_url);
   }, [perfil]);
 
   if (!perfil) return null;
 
-  const urlPublica = apelido
-    ? `${window.location.origin}/u/${apelido}`
-    : null;
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -64,7 +56,6 @@ export function Perfil() {
         estado: estado.trim().toUpperCase() || null,
         whatsapp: whatsapp.replace(/\D/g, '') || null,
         whatsapp_publico: whatsappPublico,
-        perfil_publico: perfilPublico,
         foto_url: fotoUrl,
       })
       .eq('id', perfil!.id);
@@ -96,8 +87,7 @@ export function Perfil() {
           lineHeight: 1.6,
         }}
       >
-        Seu perfil só aparece na busca de trocas depois que você definir um
-        apelido.
+        Esses dados são seus. O app não expõe seu perfil para ninguém.
       </p>
 
       <form onSubmit={salvar} style={TS.card}>
@@ -124,7 +114,7 @@ export function Perfil() {
         <Campo
           rotulo="Apelido"
           id="apelido"
-          dica="Vira o endereço do seu perfil público."
+          dica="Como você quer ser chamado."
         >
           <input
             id="apelido"
@@ -170,43 +160,6 @@ export function Perfil() {
           />
         </Campo>
 
-        {/* Item 11 — o colecionador decide se aparece nas buscas */}
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-            padding: '12px 14px',
-            background: perfilPublico ? T.neonFaint : T.bgElevated,
-            border: `1px solid ${perfilPublico ? T.neonBorder : T.border}`,
-            borderRadius: T.radiusSm,
-            marginBottom: 12,
-            cursor: 'pointer',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={perfilPublico}
-            onChange={(e) => setPerfilPublico(e.target.checked)}
-            style={{ marginTop: 2, accentColor: T.neon, width: 16, height: 16 }}
-          />
-          <span
-            style={{
-              fontFamily: T.fontBody,
-              fontSize: 13,
-              color: T.textSecondary,
-              lineHeight: 1.5,
-            }}
-          >
-            Aparecer nas buscas e nas trocas.
-            <br />
-            <span style={{ color: T.textMuted, fontSize: 12 }}>
-              Desligado, ninguém te encontra e você não aparece como opção de troca.
-              Seu e-mail nunca é mostrado.
-            </span>
-          </span>
-        </label>
-
         {/* Item 5.4 — privacidade do WhatsApp, oculto por padrão */}
         <label
           style={{
@@ -235,10 +188,10 @@ export function Perfil() {
               lineHeight: 1.5,
             }}
           >
-            Mostrar meu WhatsApp no perfil público.
+            Incluir meu WhatsApp nas listas que eu compartilhar.
             <br />
             <span style={{ color: T.textMuted, fontSize: 12 }}>
-              Desmarcado, ele só é revelado depois que você aceitar uma troca.
+              Desmarcado, suas listas saem sem o telefone.
             </span>
           </span>
         </label>
@@ -274,42 +227,6 @@ export function Perfil() {
         </button>
       </form>
 
-      {/* Compartilhar — botões padrão da casa */}
-      {urlPublica && (
-        <div style={{ ...TS.card, marginTop: 18 }}>
-          <div style={{ ...TS.label, marginBottom: 10 }}>
-            Compartilhar meu perfil
-          </div>
-          <code
-            style={{
-              display: 'block',
-              fontSize: 12.5,
-              color: T.neon,
-              background: T.bgElevated,
-              border: `1px solid ${T.border}`,
-              borderRadius: T.radiusSm,
-              padding: '9px 12px',
-              marginBottom: 12,
-              overflowX: 'auto',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {urlPublica}
-          </code>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 160px' }}>
-              <BotaoWhatsApp
-                mensagem={msg.perfil(apelido, urlPublica)}
-                variant="full"
-                rotulo="Compartilhar"
-              />
-            </div>
-            <div style={{ flex: '1 1 160px' }}>
-              <BotaoCopiarLink url={urlPublica} variant="full" />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

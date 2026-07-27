@@ -6,10 +6,6 @@
 const ASSINATURA = '\n\n— via Coleção Fácil · netao.app.br';
 
 export const msg = {
-  /** Compartilhar o perfil público do colecionador */
-  perfil: (apelido: string, url: string) =>
-    `Olha minha coleção no Coleção Fácil! 👀\n\nPerfil: @${apelido}\n${url}${ASSINATURA}`,
-
   /** Compartilhar uma coleção */
   colecao: (nome: string, progresso: string, url: string) =>
     `Estou montando a coleção *${nome}* 📒\n\nJá tenho ${progresso}.\n${url}${ASSINATURA}`,
@@ -25,12 +21,21 @@ export const msg = {
     `Tenho ${quantidade} ${quantidade === 1 ? 'repetida' : 'repetidas'} da coleção *${nomeColecao}* para trocar 🔁\n\n` +
     `Confere aí: ${url}${ASSINATURA}`,
 
-  /** Abrir conversa de troca */
-  propostaTroca: (apelidoDestino: string, ofereco: string[], peco: string[]) =>
-    `Oi @${apelidoDestino}! Vi que a gente pode fechar uma troca 🤝\n\n` +
-    `*Eu tenho:* ${ofereco.join(', ')}\n` +
-    `*Eu preciso:* ${peco.join(', ')}\n\n` +
-    `Topa?${ASSINATURA}`,
+  /** Lista pronta para negociar troca */
+  listaTroca: (
+    nomeColecao: string,
+    tenho: string[],
+    preciso: string[]
+  ) => {
+    const partes = [`*${nomeColecao}*`];
+    if (tenho.length > 0) {
+      partes.push(`\n🔁 *Tenho para trocar* (${tenho.length}):\n${tenho.join(', ')}`);
+    }
+    if (preciso.length > 0) {
+      partes.push(`\n🔍 *Preciso* (${preciso.length}):\n${preciso.join(', ')}`);
+    }
+    return partes.join('\n') + ASSINATURA;
+  },
 
   /** Convite genérico para o app */
   convite: (url: string) =>
