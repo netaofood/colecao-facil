@@ -62,7 +62,9 @@ export function AdicionarItens({
     try {
       const comSub = novos.map((n) => ({
         ...n,
-        subdivisao_id: subdivisaoId || null,
+        // A série já define a subdivisão de cada item; o resto usa o seletor
+        subdivisao_id:
+          n.subdivisao_id !== undefined ? n.subdivisao_id : subdivisaoId || null,
       }));
       aoConcluir(await inserirItens(colecaoId, comSub, ordemInicial));
     } catch (e) {
@@ -106,17 +108,19 @@ export function AdicionarItens({
         />
       </div>
 
-      <SeletorSubdivisao
-        colecaoId={colecaoId}
-        subdivisoes={subs}
-        sugestoes={nomesSubdivisao}
-        valor={subdivisaoId}
-        aoMudar={setSubdivisaoId}
-        aoCriar={(nova) => {
-          setSubs((a) => [...a, nova]);
-          setSubdivisaoId(nova.id);
-        }}
-      />
+      {caminho !== 'serie' && (
+        <SeletorSubdivisao
+          colecaoId={colecaoId}
+          subdivisoes={subs}
+          sugestoes={nomesSubdivisao}
+          valor={subdivisaoId}
+          aoMudar={setSubdivisaoId}
+          aoCriar={(nova) => {
+            setSubs((a) => [...a, nova]);
+            setSubdivisaoId(nova.id);
+          }}
+        />
+      )}
 
       {erro && (
         <div
@@ -137,7 +141,15 @@ export function AdicionarItens({
       )}
 
       {caminho === 'serie' && (
-        <PorSerie salvando={salvando} aoSalvar={salvar} categorias={categorias} />
+        <PorSerie
+          salvando={salvando}
+          aoSalvar={salvar}
+          categorias={categorias}
+          colecaoId={colecaoId}
+          subdivisoes={subs}
+          sugestoes={nomesSubdivisao}
+          aoCriarSubdivisao={(nova) => setSubs((a) => [...a, nova])}
+        />
       )}
       {caminho === 'grid' && (
         <PorGrid salvando={salvando} aoSalvar={salvar} categorias={categorias} />
@@ -151,14 +163,31 @@ export function AdicionarItens({
 /* CAMINHO 1 — NUMERAÇÃO EM SÉRIE                                  */
 /* -------------------------------------------------------------- */
 
+/** "Ouro" -> "OURO". Sem acento, sem espaço, maiúsculas. */
+function codigoDaSubdivisao(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
+}
+
 function PorSerie({
   salvando,
   aoSalvar,
   categorias,
+  colecaoId,
+  subdivisoes,
+  sugestoes,
+  aoCriarSubdivisao,
 }: {
   salvando: boolean;
   aoSalvar: (n: NovoItem[]) => void;
   categorias: string[];
+  colecaoId: string;
+  subdivisoes: Subdivisao[];
+  sugestoes: string[];
+  aoCriarSubdivisao: (nova: Subdivisao) => void;
 }) {
   const [de, setDe] = useState('1');
   const [ate, setAte] = useState('100');
@@ -166,29 +195,42 @@ function PorSerie({
   const [zeros, setZeros] = useState(false);
   const [raridade, setRaridade] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
 
   const inicio = Number(de) || 0;
   const fim = Number(ate) || 0;
-  const quantidade = fim >= inicio ? fim - inicio + 1 : 0;
+  const porSubdivisao = fim >= inicio ? fim - inicio + 1 : 0;
   const largura = String(fim).length;
 
-  function formatar(n: number) {
+  const escolhidas = subdivisoes.filter((s) => marcadas.has(s.id));
+  // Sem nenhuma marcada, gera uma leva só, sem subdivisão
+  const levas: (Subdivisao | null)[] =
+    escolhidas.length > 0 ? escolhidas : [null];
+
+  const quantidade = porSubdivisao * levas.length;
+
+  /** prefixo + NOME DA SUBDIVISÃO + número */
+  function formatar(n: number, sub: Subdivisao | null) {
     const num = zeros ? String(n).padStart(largura, '0') : String(n);
-    return `${prefixo}${num}`;
+    const meio = sub ? codigoDaSubdivisao(sub.nome) : '';
+    return `${prefixo}${meio}${num}`;
   }
 
   const excedeu = quantidade > 2000;
 
   function gerar(): NovoItem[] {
     const lista: NovoItem[] = [];
-    for (let n = inicio; n <= fim; n++) {
-      const codigo = formatar(n);
-      lista.push({
-        numero: codigo,
-        nome: codigo,
-        raridade: raridade || null,
-        categoria: categoria || null,
-      });
+    for (const sub of levas) {
+      for (let n = inicio; n <= fim; n++) {
+        const codigo = formatar(n, sub);
+        lista.push({
+          numero: codigo,
+          nome: codigo,
+          raridade: raridade || null,
+          categoria: categoria || null,
+          subdivisao_id: sub ? sub.id : null,
+        });
+      }
     }
     return lista;
   }
@@ -257,6 +299,25 @@ function PorSerie({
         </div>
       </div>
 
+      <MultiSubdivisao
+        colecaoId={colecaoId}
+        subdivisoes={subdivisoes}
+        sugestoes={sugestoes}
+        marcadas={marcadas}
+        aoAlternar={(id) =>
+          setMarcadas((atual) => {
+            const novo = new Set(atual);
+            if (novo.has(id)) novo.delete(id);
+            else novo.add(id);
+            return novo;
+          })
+        }
+        aoCriar={(nova) => {
+          aoCriarSubdivisao(nova);
+          setMarcadas((a) => new Set(a).add(nova.id));
+        }}
+      />
+
       <div style={{ marginBottom: 14 }}>
         <label style={TS.label} htmlFor="cat-serie">
           Categoria (opcional)
@@ -305,7 +366,7 @@ function PorSerie({
           lineHeight: 1.6,
         }}
       >
-        {quantidade === 0 ? (
+        {porSubdivisao === 0 ? (
           <span style={{ color: T.aviso }}>
             O número final precisa ser maior ou igual ao inicial.
           </span>
@@ -316,25 +377,63 @@ function PorSerie({
           </span>
         ) : (
           <>
-            Serão criados{' '}
-            <strong style={{ color: T.neon }}>{quantidade}</strong> itens:{' '}
-            <code style={{ color: T.textPrimary }}>
-              {formatar(inicio)}, {formatar(inicio + 1)}
-              {quantidade > 3 ? ', ... , ' : quantidade === 3 ? ', ' : ''}
-              {quantidade > 2 ? formatar(fim) : ''}
-            </code>
+            <div style={{ marginBottom: levas.length > 1 ? 8 : 0 }}>
+              Serão criados{' '}
+              <strong style={{ color: T.neon }}>{quantidade}</strong> itens
+              {levas.length > 1 && (
+                <>
+                  {' '}
+                  — {porSubdivisao} em cada uma das {levas.length} subdivisões
+                </>
+              )}
+              :
+            </div>
+
+            {levas.map((sub) => (
+              <div
+                key={sub?.id ?? 'sem'}
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'baseline',
+                  flexWrap: 'wrap',
+                  marginTop: 4,
+                }}
+              >
+                {levas.length > 1 && (
+                  <span
+                    style={{
+                      color: T.textMuted,
+                      fontSize: 12,
+                      minWidth: 70,
+                    }}
+                  >
+                    {sub?.nome ?? 'Sem subdivisão'}
+                  </span>
+                )}
+                <code style={{ color: T.textPrimary, fontSize: 12.5 }}>
+                  {formatar(inicio, sub)}
+                  {porSubdivisao > 1 && (
+                    <>
+                      {porSubdivisao > 2 ? ' ... ' : ', '}
+                      {formatar(fim, sub)}
+                    </>
+                  )}
+                </code>
+              </div>
+            ))}
           </>
         )}
       </div>
 
       <button
         type="button"
-        disabled={salvando || quantidade === 0 || excedeu}
+        disabled={salvando || porSubdivisao === 0 || excedeu}
         onClick={() => aoSalvar(gerar())}
         style={{
           ...TS.botaoPrimario,
           width: '100%',
-          opacity: salvando || quantidade === 0 || excedeu ? 0.5 : 1,
+          opacity: salvando || porSubdivisao === 0 || excedeu ? 0.5 : 1,
         }}
       >
         {salvando ? 'Criando...' : `Criar ${quantidade} itens`}
@@ -900,6 +999,265 @@ function SeletorSubdivisao({
           ))}
           <option value={NOVA}>+ Nova subdivisão...</option>
         </select>
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- */
+/* SELEÇÃO DE VÁRIAS SUBDIVISÕES (numeração em série)              */
+/* -------------------------------------------------------------- */
+
+function MultiSubdivisao({
+  colecaoId,
+  subdivisoes,
+  sugestoes,
+  marcadas,
+  aoAlternar,
+  aoCriar,
+}: {
+  colecaoId: string;
+  subdivisoes: Subdivisao[];
+  sugestoes: string[];
+  marcadas: Set<string>;
+  aoAlternar: (id: string) => void;
+  aoCriar: (nova: Subdivisao) => void;
+}) {
+  const [criando, setCriando] = useState(false);
+  const [nome, setNome] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function criar() {
+    const limpo = nome.trim();
+    if (!limpo) return;
+
+    const repetida = subdivisoes.find(
+      (s) => s.nome.toLowerCase() === limpo.toLowerCase()
+    );
+    if (repetida) {
+      aoCriar(repetida);
+      encerrar();
+      return;
+    }
+
+    setErro(null);
+    setSalvando(true);
+    try {
+      aoCriar(await criarSubdivisao(colecaoId, limpo, subdivisoes.length));
+      encerrar();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Erro ao criar.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  function encerrar() {
+    setCriando(false);
+    setNome('');
+    setErro(null);
+  }
+
+  const todasMarcadas =
+    subdivisoes.length > 0 && subdivisoes.every((s) => marcadas.has(s.id));
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          marginBottom: 8,
+        }}
+      >
+        <label style={{ ...TS.label, marginBottom: 0 }}>
+          Criar em quais subdivisões
+        </label>
+
+        {subdivisoes.length > 1 && (
+          <button
+            type="button"
+            onClick={() =>
+              subdivisoes.forEach((s) => {
+                const marcada = marcadas.has(s.id);
+                if (todasMarcadas ? marcada : !marcada) aoAlternar(s.id);
+              })
+            }
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: T.neon,
+              fontSize: 12,
+              fontFamily: T.fontBody,
+              fontWeight: 600,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            {todasMarcadas ? 'Desmarcar todas' : 'Marcar todas'}
+          </button>
+        )}
+      </div>
+
+      {subdivisoes.length === 0 && !criando && (
+        <div
+          style={{
+            fontFamily: T.fontBody,
+            fontSize: 12.5,
+            color: T.textMuted,
+            marginBottom: 8,
+            lineHeight: 1.5,
+          }}
+        >
+          Nenhuma subdivisão ainda. Sem marcar nenhuma, os itens são criados
+          soltos.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+        {subdivisoes.map((s) => {
+          const marcada = marcadas.has(s.id);
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => aoAlternar(s.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                padding: '8px 13px',
+                borderRadius: 99,
+                border: `1.5px solid ${marcada ? T.neon : T.border}`,
+                background: marcada ? T.neonFaint : 'transparent',
+                color: marcada ? T.neon : T.textSecondary,
+                fontFamily: T.fontBody,
+                fontSize: 13,
+                fontWeight: marcada ? 700 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              <span
+                style={{
+                  width: 15,
+                  height: 15,
+                  borderRadius: 4,
+                  border: `1.5px solid ${marcada ? T.neon : T.borderStrong}`,
+                  background: marcada ? T.neon : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {marcada && (
+                  <Check size={11} color={T.textoBotao} strokeWidth={3.5} />
+                )}
+              </span>
+              {s.nome}
+            </button>
+          );
+        })}
+
+        {!criando && (
+          <button
+            type="button"
+            onClick={() => setCriando(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '8px 13px',
+              borderRadius: 99,
+              border: `1.5px dashed ${T.border}`,
+              background: 'transparent',
+              color: T.textMuted,
+              fontFamily: T.fontBody,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            <Plus size={14} />
+            Nova
+          </button>
+        )}
+      </div>
+
+      {criando && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ display: 'flex', gap: 7 }}>
+            <input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void criar();
+                }
+                if (e.key === 'Escape') encerrar();
+              }}
+              placeholder="ex: Ouro"
+              autoComplete="off"
+              autoFocus
+              style={{ ...TS.input, flex: 1 }}
+            />
+            <button
+              type="button"
+              onClick={() => void criar()}
+              disabled={salvando || !nome.trim()}
+              aria-label="Criar subdivisão"
+              style={{
+                ...TS.botaoPrimario,
+                padding: '0 14px',
+                display: 'flex',
+                alignItems: 'center',
+                opacity: salvando || !nome.trim() ? 0.5 : 1,
+              }}
+            >
+              <Check size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={encerrar}
+              aria-label="Cancelar"
+              style={{
+                background: 'transparent',
+                border: `1px solid ${T.border}`,
+                borderRadius: T.radius,
+                color: T.textMuted,
+                padding: '0 12px',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={17} />
+            </button>
+          </div>
+
+          <SugestoesNomes
+            nomes={sugestoes}
+            jaExistem={subdivisoes.map((s) => s.nome)}
+            aoEscolher={setNome}
+          />
+
+          {erro && (
+            <div
+              style={{
+                fontFamily: T.fontBody,
+                fontSize: 12,
+                color: T.erro,
+                marginTop: 6,
+              }}
+            >
+              {erro}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
