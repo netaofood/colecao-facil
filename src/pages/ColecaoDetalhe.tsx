@@ -28,6 +28,7 @@ import { RARIDADES } from '../lib/tipos';
 import { UploadImagem } from '../components/UploadImagem';
 import { ModalOrganizar } from '../components/ModalOrganizar';
 import { InputCategoria } from '../components/InputCategoria';
+import { SugestoesNomes } from '../components/SugestoesNomes';
 import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
@@ -802,18 +803,12 @@ function ModalSubdivisao({
         style={{ display: 'flex', gap: 8 }}
       >
         <input
-          list="sugestoes-sub-modal"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder="ex: Página 1"
           autoComplete="off"
           style={{ ...TS.input, flex: 1 }}
         />
-        <datalist id="sugestoes-sub-modal">
-          {sugestoes.map((n) => (
-            <option key={n} value={n} />
-          ))}
-        </datalist>
         <button
           type="submit"
           disabled={salvando || !nome.trim()}
@@ -826,6 +821,12 @@ function ModalSubdivisao({
           <Plus size={17} />
         </button>
       </form>
+
+      <SugestoesNomes
+        nomes={sugestoes}
+        jaExistem={subdivisoes.map((s) => s.nome)}
+        aoEscolher={setNome}
+      />
     </Modal>
   );
 }

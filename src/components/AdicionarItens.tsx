@@ -12,6 +12,7 @@ import {
   type NovoItem,
 } from '../lib/api';
 import { InputCategoria } from './InputCategoria';
+import { SugestoesNomes } from './SugestoesNomes';
 
 type Caminho = 'serie' | 'grid' | 'csv';
 
@@ -814,7 +815,6 @@ function SeletorSubdivisao({
         <>
           <div style={{ display: 'flex', gap: 7 }}>
             <input
-              list="sugestoes-subdivisao"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               onKeyDown={(e) => {
@@ -829,11 +829,6 @@ function SeletorSubdivisao({
               autoFocus
               style={{ ...TS.input, flex: 1 }}
             />
-            <datalist id="sugestoes-subdivisao">
-              {sugestoes.map((n) => (
-                <option key={n} value={n} />
-              ))}
-            </datalist>
             <button
               type="button"
               onClick={() => void salvar()}
@@ -867,6 +862,12 @@ function SeletorSubdivisao({
               <X size={17} />
             </button>
           </div>
+
+          <SugestoesNomes
+            nomes={sugestoes}
+            jaExistem={subdivisoes.map((s) => s.nome)}
+            aoEscolher={setNome}
+          />
 
           {erro && (
             <div
