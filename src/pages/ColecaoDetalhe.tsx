@@ -780,9 +780,21 @@ function ModalSubdivisao({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          if (!nome.trim()) return;
+          const limpo = nome.trim();
+          if (!limpo) return;
+
+          // Nome repetido nesta coleção: não cria de novo
+          if (
+            subdivisoes.some(
+              (s) => s.nome.toLowerCase() === limpo.toLowerCase()
+            )
+          ) {
+            setNome('');
+            return;
+          }
+
           setSalvando(true);
-          await criarSubdivisao(colecaoId, nome, subdivisoes.length);
+          await criarSubdivisao(colecaoId, limpo, subdivisoes.length);
           setNome('');
           await aoMudar();
           setSalvando(false);
@@ -798,16 +810,9 @@ function ModalSubdivisao({
           style={{ ...TS.input, flex: 1 }}
         />
         <datalist id="sugestoes-sub-modal">
-          {sugestoes
-            .filter(
-              (n) =>
-                !subdivisoes.some(
-                  (s) => s.nome.toLowerCase() === n.toLowerCase()
-                )
-            )
-            .map((n) => (
-              <option key={n} value={n} />
-            ))}
+          {sugestoes.map((n) => (
+            <option key={n} value={n} />
+          ))}
         </datalist>
         <button
           type="submit"

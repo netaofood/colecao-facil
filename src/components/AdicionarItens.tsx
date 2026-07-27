@@ -769,9 +769,9 @@ function SeletorSubdivisao({
   const [criando, setCriando] = useState(false);
   const [nome, setNome] = useState('');
 
-  // Não sugere o que esta coleção já tem
-  const jaTem = new Set(subdivisoes.map((s) => s.nome.toLowerCase()));
-  const disponiveis = sugestoes.filter((n) => !jaTem.has(n.toLowerCase()));
+  // Mostra tudo que o usuário já usou. Se escolher um nome que a coleção
+  // já tem, salvar() reaproveita a existente em vez de duplicar.
+  const disponiveis = sugestoes;
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
