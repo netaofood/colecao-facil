@@ -98,8 +98,19 @@ drop policy if exists itens_usuario_le_publico on public.itens_usuario;
 
 alter table public.usuarios drop column if exists perfil_publico;
 
--- Coleção oficial era do modelo de adoção, que não existe mais
+-- Coleção oficial era do modelo de adoção, que não existe mais.
+-- Duas políticas citam essa coluna, então precisam ser refeitas antes.
+drop policy if exists colecoes_cria on public.colecoes;
+drop policy if exists colecoes_edita on public.colecoes;
+
 alter table public.colecoes drop column if exists oficial;
+
+create policy colecoes_cria on public.colecoes
+  for insert with check (dono_id = auth.uid());
+
+create policy colecoes_edita on public.colecoes
+  for update using (dono_id = auth.uid())
+  with check (dono_id = auth.uid());
 
 
 -- ---------------------------------------------------------------------
