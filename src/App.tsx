@@ -12,6 +12,7 @@ import { MinhaColecao } from './pages/MinhaColecao';
 import { Trocas } from './pages/Trocas';
 import { Descobrir } from './pages/Descobrir';
 import { Relatorios } from './pages/Relatorios';
+import { PerfilPublicoPagina } from './pages/PerfilPublicoPagina';
 import { T } from './theme';
 
 export default function App() {
@@ -33,12 +34,22 @@ function Rotas() {
   if (!session) {
     return (
       <Routes>
+        <Route path="/u/:apelido" element={<PerfilPublicoPagina />} />
         <Route path="/login" element={<Login />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }
 
+  return (
+    <Routes>
+      <Route path="/u/:apelido" element={<PerfilPublicoPagina />} />
+      <Route path="*" element={<AppLogado />} />
+    </Routes>
+  );
+}
+
+function AppLogado() {
   return (
     <Layout>
       <Routes>

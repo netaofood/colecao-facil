@@ -99,8 +99,14 @@ Rodar em ordem no SQL Editor do Supabase:
 - `0001_init.sql` — schema completo.
 - `0002_convites_termos_privacidade.sql` — convites, idade mínima, termos, perfil público.
 
+## Rotas públicas
+
+`/u/{apelido}` — página pública do colecionador, acessível sem login.
+Só aparece se o colecionador tiver ligado "Aparecer nas buscas" no perfil.
+
 ## Pendências conhecidas
 
 - Termos de uso em `src/lib/termos.ts` são **rascunho** e precisam de revisão jurídica.
-- Upload de foto por item ainda não tem interface (o campo `foto_url` existe e a grade já exibe).
 - Domínio `colecao.netao.app.br` a apontar na Vercel.
+- Nada foi testado contra o banco de produção: build e tipos passam, mas
+  gravação, leitura e RLS estreiam no primeiro uso real.

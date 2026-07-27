@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
+import { UploadImagem } from '../components/UploadImagem';
 
 export function Perfil() {
   const { perfil, recarregarPerfil } = useAuth();
@@ -16,6 +17,7 @@ export function Perfil() {
   const [whatsapp, setWhatsapp] = useState('');
   const [whatsappPublico, setWhatsappPublico] = useState(false);
   const [perfilPublico, setPerfilPublico] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -29,6 +31,7 @@ export function Perfil() {
     setWhatsapp(perfil.whatsapp ?? '');
     setWhatsappPublico(perfil.whatsapp_publico);
     setPerfilPublico(perfil.perfil_publico);
+    setFotoUrl(perfil.foto_url);
   }, [perfil]);
 
   if (!perfil) return null;
@@ -62,6 +65,7 @@ export function Perfil() {
         whatsapp: whatsapp.replace(/\D/g, '') || null,
         whatsapp_publico: whatsappPublico,
         perfil_publico: perfilPublico,
+        foto_url: fotoUrl,
       })
       .eq('id', perfil!.id);
 
@@ -97,6 +101,17 @@ export function Perfil() {
       </p>
 
       <form onSubmit={salvar} style={TS.card}>
+        <div style={{ marginBottom: 18 }}>
+          <label style={TS.label}>Foto</label>
+          <UploadImagem
+            valor={fotoUrl}
+            aoMudar={setFotoUrl}
+            pasta="perfis"
+            formato="circulo"
+            tamanho={86}
+          />
+        </div>
+
         <Campo rotulo="Nome" id="nome">
           <input
             id="nome"

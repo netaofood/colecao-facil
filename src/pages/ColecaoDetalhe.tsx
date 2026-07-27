@@ -7,6 +7,7 @@ import {
   Layers,
   Trash2,
   Search,
+  Pencil,
 } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
@@ -17,8 +18,11 @@ import {
   criarSubdivisao,
   apagarItem,
   apagarColecao,
+  atualizarItem,
 } from '../lib/api';
 import type { Colecao, Item, Subdivisao } from '../lib/tipos';
+import { RARIDADES } from '../lib/tipos';
+import { UploadImagem } from '../components/UploadImagem';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
 
@@ -39,6 +43,7 @@ export function ColecaoDetalhe() {
   const [busca, setBusca] = useState('');
   const [filtroSub, setFiltroSub] = useState('');
   const [resumo, setResumo] = useState<string | null>(null);
+  const [editando, setEditando] = useState<Item | null>(null);
 
   const carregar = useCallback(async () => {
     if (!id) return;
@@ -262,6 +267,7 @@ export function ColecaoDetalhe() {
               key={item.id}
               item={item}
               ehDono={ehDono}
+              aoEditar={() => setEditando(item)}
               aoApagar={async () => {
                 await apagarItem(item.id);
                 setItens((a) => a.filter((x) => x.id !== item.id));
@@ -324,6 +330,18 @@ export function ColecaoDetalhe() {
         />
       )}
 
+      {editando && (
+        <ModalEditarItem
+          item={editando}
+          aoFechar={() => setEditando(null)}
+          aoSalvar={async (dados) => {
+            await atualizarItem(editando.id, dados);
+            setEditando(null);
+            await carregar();
+          }}
+        />
+      )}
+
       {modal === 'apagar' && (
         <Modal titulo="Apagar coleção" aoFechar={() => setModal(null)}>
           <p
@@ -381,10 +399,12 @@ function CartaoItem({
   item,
   ehDono,
   aoApagar,
+  aoEditar,
 }: {
   item: Item;
   ehDono: boolean;
   aoApagar: () => Promise<void>;
+  aoEditar: () => void;
 }) {
   const [sobre, setSobre] = useState(false);
 
@@ -401,6 +421,21 @@ function CartaoItem({
         minHeight: 74,
       }}
     >
+      {item.foto_url && (
+        <img
+          src={item.foto_url}
+          alt=""
+          style={{
+            width: '100%',
+            aspectRatio: '3 / 4',
+            objectFit: 'cover',
+            borderRadius: 4,
+            marginBottom: 7,
+            display: 'block',
+          }}
+        />
+      )}
+
       {item.numero && (
         <div
           style={{
@@ -444,6 +479,28 @@ function CartaoItem({
       {ehDono && sobre && (
         <button
           type="button"
+          aria-label={`Editar ${item.nome}`}
+          onClick={aoEditar}
+          style={{
+            position: 'absolute',
+            top: 5,
+            left: 5,
+            background: T.bgElevated,
+            border: `1px solid ${T.border}`,
+            borderRadius: 6,
+            color: T.neon,
+            cursor: 'pointer',
+            display: 'flex',
+            padding: 4,
+          }}
+        >
+          <Pencil size={13} />
+        </button>
+      )}
+
+      {ehDono && sobre && (
+        <button
+          type="button"
           aria-label={`Apagar ${item.nome}`}
           onClick={() => void aoApagar()}
           style={{
@@ -463,6 +520,139 @@ function CartaoItem({
         </button>
       )}
     </div>
+  );
+}
+
+function ModalEditarItem({
+  item,
+  aoFechar,
+  aoSalvar,
+}: {
+  item: Item;
+  aoFechar: () => void;
+  aoSalvar: (dados: {
+    numero: string | null;
+    nome: string;
+    categoria: string | null;
+    raridade: string | null;
+    foto_url: string | null;
+  }) => Promise<void>;
+}) {
+  const [numero, setNumero] = useState(item.numero ?? '');
+  const [nome, setNome] = useState(item.nome);
+  const [categoria, setCategoria] = useState(item.categoria ?? '');
+  const [raridade, setRaridade] = useState(item.raridade ?? '');
+  const [fotoUrl, setFotoUrl] = useState<string | null>(item.foto_url);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  return (
+    <Modal titulo="Editar item" aoFechar={aoFechar}>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setErro(null);
+          setSalvando(true);
+          try {
+            await aoSalvar({
+              numero: numero.trim() || null,
+              nome: nome.trim(),
+              categoria: categoria.trim() || null,
+              raridade: raridade || null,
+              foto_url: fotoUrl,
+            });
+          } catch (err) {
+            setErro(err instanceof Error ? err.message : 'Erro ao salvar.');
+            setSalvando(false);
+          }
+        }}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <label style={TS.label}>Foto</label>
+          <UploadImagem
+            valor={fotoUrl}
+            aoMudar={setFotoUrl}
+            pasta="itens"
+            formato="retrato"
+            tamanho={96}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+          <div style={{ width: 100 }}>
+            <label style={TS.label} htmlFor="ed-num">Número</label>
+            <input
+              id="ed-num"
+              value={numero}
+              onChange={(e) => setNumero(e.target.value)}
+              style={TS.input}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={TS.label} htmlFor="ed-nome">Nome</label>
+            <input
+              id="ed-nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              required
+              style={TS.input}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+          <div style={{ flex: 1 }}>
+            <label style={TS.label} htmlFor="ed-cat">Categoria</label>
+            <input
+              id="ed-cat"
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+              style={TS.input}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={TS.label} htmlFor="ed-rar">Raridade</label>
+            <select
+              id="ed-rar"
+              value={raridade}
+              onChange={(e) => setRaridade(e.target.value)}
+              style={{ ...TS.input, colorScheme: 'dark' }}
+            >
+              <option value="">Nenhuma</option>
+              {RARIDADES.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {erro && (
+          <div
+            role="alert"
+            style={{
+              background: T.erroFaint,
+              border: `1px solid ${T.erro}`,
+              borderRadius: T.radiusSm,
+              padding: '10px 12px',
+              marginBottom: 12,
+              fontSize: 13,
+              color: T.erro,
+              fontFamily: T.fontBody,
+            }}
+          >
+            {erro}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={salvando}
+          style={{ ...TS.botaoPrimario, width: '100%', opacity: salvando ? 0.6 : 1 }}
+        >
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </button>
+      </form>
+    </Modal>
   );
 }
 

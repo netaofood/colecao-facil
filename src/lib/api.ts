@@ -569,3 +569,81 @@ export async function buscarMatches(
     return pesoB - pesoA;
   });
 }
+
+/* ---------------------------------------------------------------- */
+/* PÁGINA PÚBLICA DO COLECIONADOR (item 10.1)                        */
+/* ---------------------------------------------------------------- */
+
+export interface RepetidaPublica {
+  item: Item;
+  colecaoNome: string;
+  quantidade: number;
+}
+
+/**
+ * Repetidas que o colecionador tem disponíveis para troca.
+ * A RLS só devolve isso se o perfil dele for público.
+ */
+export async function listarRepetidasPublicas(
+  usuarioId: string
+): Promise<RepetidaPublica[]> {
+  const { data, error } = await supabase
+    .from('itens_usuario')
+    .select('quantidade_repetida, itens(*, colecoes(nome))')
+    .eq('usuario_id', usuarioId)
+    .eq('status', 'repetida')
+    .limit(200);
+
+  if (error) throw new Error(error.message);
+
+  return ((data ?? []) as unknown as {
+    quantidade_repetida: number;
+    itens: (Item & { colecoes: { nome: string } | null }) | null;
+  }[])
+    .filter((l) => l.itens)
+    .map((l) => ({
+      item: l.itens!,
+      colecaoNome: l.itens!.colecoes?.nome ?? 'Coleção',
+      quantidade: l.quantidade_repetida,
+    }));
+}
+
+/* ---------------------------------------------------------------- */
+/* UPLOAD DE IMAGEM (item 7.5)                                       */
+/* ---------------------------------------------------------------- */
+
+const BUCKET = 'colecao-imagens';
+const TAMANHO_MAXIMO = 5 * 1024 * 1024; // 5 MB
+const TIPOS_ACEITOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+export async function enviarImagem(
+  arquivo: File,
+  pasta: string
+): Promise<string> {
+  if (!TIPOS_ACEITOS.includes(arquivo.type)) {
+    throw new Error('Formato não aceito. Use JPG, PNG, WEBP ou GIF.');
+  }
+  if (arquivo.size > TAMANHO_MAXIMO) {
+    throw new Error('Imagem muito grande. O limite é 5 MB.');
+  }
+
+  const extensao = arquivo.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const nome = `${pasta}/${crypto.randomUUID()}.${extensao}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(nome, arquivo, { cacheControl: '3600', upsert: false });
+
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(nome);
+  return data.publicUrl;
+}
+
+export async function apagarImagem(url: string): Promise<void> {
+  const marca = `/${BUCKET}/`;
+  const posicao = url.indexOf(marca);
+  if (posicao === -1) return;
+  const caminho = url.slice(posicao + marca.length);
+  await supabase.storage.from(BUCKET).remove([caminho]);
+}
