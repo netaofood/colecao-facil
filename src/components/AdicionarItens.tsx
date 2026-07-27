@@ -769,9 +769,6 @@ function SeletorSubdivisao({
   const [criando, setCriando] = useState(false);
   const [nome, setNome] = useState('');
 
-  // Mostra tudo que o usuário já usou. Se escolher um nome que a coleção
-  // já tem, salvar() reaproveita a existente em vez de duplicar.
-  const disponiveis = sugestoes;
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -833,7 +830,7 @@ function SeletorSubdivisao({
               style={{ ...TS.input, flex: 1 }}
             />
             <datalist id="sugestoes-subdivisao">
-              {disponiveis.map((n) => (
+              {sugestoes.map((n) => (
                 <option key={n} value={n} />
               ))}
             </datalist>
