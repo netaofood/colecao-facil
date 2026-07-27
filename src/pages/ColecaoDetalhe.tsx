@@ -8,6 +8,7 @@ import {
   Trash2,
   Search,
   Pencil,
+  Wand2,
 } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
@@ -23,6 +24,7 @@ import {
 import type { Colecao, Item, Subdivisao } from '../lib/tipos';
 import { RARIDADES } from '../lib/tipos';
 import { UploadImagem } from '../components/UploadImagem';
+import { ModalOrganizar } from '../components/ModalOrganizar';
 import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
@@ -38,9 +40,9 @@ export function ColecaoDetalhe() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [modal, setModal] = useState<'itens' | 'subdivisao' | 'apagar' | null>(
-    null
-  );
+  const [modal, setModal] = useState<
+    'itens' | 'subdivisao' | 'apagar' | 'organizar' | null
+  >(null);
   const [busca, setBusca] = useState('');
   const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
   const [resumo, setResumo] = useState<string | null>(null);
@@ -151,6 +153,24 @@ export function ColecaoDetalhe() {
 
         {ehDono && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {subdivisoes.length > 0 &&
+              itens.some((i) => !i.subdivisao_id) && (
+                <button
+                  type="button"
+                  onClick={() => setModal('organizar')}
+                  style={{
+                    ...TS.botaoSecundario,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '10px 14px',
+                  }}
+                >
+                  <Wand2 size={16} />
+                  Organizar
+                </button>
+              )}
+
             <button
               type="button"
               onClick={() => setModal('subdivisao')}
@@ -350,6 +370,20 @@ export function ColecaoDetalhe() {
             await atualizarItem(editando.id, dados);
             setEditando(null);
             await carregar();
+          }}
+        />
+      )}
+
+      {modal === 'organizar' && (
+        <ModalOrganizar
+          itens={itens}
+          subdivisoes={subdivisoes}
+          aoFechar={() => setModal(null)}
+          aoConcluir={async (organizados) => {
+            setModal(null);
+            setResumo(`${organizados} itens organizados em subdivisões.`);
+            await carregar();
+            setTimeout(() => setResumo(null), 6000);
           }}
         />
       )}

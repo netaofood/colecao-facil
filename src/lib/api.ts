@@ -647,3 +647,18 @@ export async function apagarImagem(url: string): Promise<void> {
   const caminho = url.slice(posicao + marca.length);
   await supabase.storage.from(BUCKET).remove([caminho]);
 }
+
+/** Vincula vários itens a uma subdivisão (ou desvincula, com null). */
+export async function vincularSubdivisao(
+  itemIds: string[],
+  subdivisaoId: string | null
+): Promise<void> {
+  const BLOCO = 300;
+  for (let i = 0; i < itemIds.length; i += BLOCO) {
+    const { error } = await supabase
+      .from('itens')
+      .update({ subdivisao_id: subdivisaoId })
+      .in('id', itemIds.slice(i, i + BLOCO));
+    if (error) throw new Error(error.message);
+  }
+}
