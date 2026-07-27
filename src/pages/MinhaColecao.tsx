@@ -32,7 +32,7 @@ import { BarraProgresso } from '../components/BarraProgresso';
 import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
-import { descricaoItem } from '../lib/rotulos';
+import { descricaoItem, rotuloCurto, tamanhoDaFonte } from '../lib/rotulos';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
 import { usePodeCadastrar } from '../components/AvisoAssinatura';
@@ -489,6 +489,7 @@ export function MinhaColecao() {
                 meus={meus}
                 selecao={selecao}
                 aoClicarItem={aoClicarItem}
+                nomeSubdivisao={g.nome}
               />
             )}
           </BlocoSubdivisao>
@@ -578,7 +579,9 @@ function Grade({
   meus,
   selecao,
   aoClicarItem,
+  nomeSubdivisao,
 }: {
+  nomeSubdivisao?: string | null;
   itens: Item[];
   meus: Map<string, ItemUsuario>;
   selecao: Set<string>;
@@ -588,7 +591,7 @@ function Grade({
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(76px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(86px, 1fr))',
         gap: 7,
       }}
     >
@@ -597,6 +600,7 @@ function Grade({
           key={item.id}
           item={item}
           linha={meus.get(item.id)}
+          rotulo={rotuloCurto(item, nomeSubdivisao)}
           selecionavel={selecao.size > 0}
           selecionado={selecao.has(item.id)}
           aoClicar={() => aoClicarItem(item)}
@@ -609,12 +613,14 @@ function Grade({
 function Celula({
   item,
   linha,
+  rotulo,
   selecionavel,
   selecionado,
   aoClicar,
 }: {
   item: Item;
   linha?: ItemUsuario;
+  rotulo: string;
   selecionavel: boolean;
   selecionado: boolean;
   aoClicar: () => void;
@@ -664,14 +670,24 @@ function Celula({
       <span
         style={{
           position: 'relative',
+          width: '100%',
+          padding: '0 3px',
           fontFamily: T.fontTitle,
-          fontSize: 13,
+          fontSize: tamanhoDaFonte(rotulo),
+          lineHeight: 1.15,
           fontWeight: 700,
           color: tenho ? cor : T.textMuted,
           textShadow: item.foto_url ? '0 1px 4px rgba(0,0,0,0.9)' : 'none',
+          // Quebra em até três linhas em vez de cortar no meio da palavra
+          overflowWrap: 'anywhere',
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          textAlign: 'center',
         }}
       >
-        {item.numero || item.nome.slice(0, 6)}
+        {rotulo}
       </span>
 
       {status === 'repetida' && (linha?.quantidade_repetida ?? 0) > 1 && (

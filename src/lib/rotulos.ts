@@ -55,3 +55,48 @@ export function nomeSugerido(
 
   return `${nomeSubdivisao} ${resto}`;
 }
+
+/**
+ * Rótulo curto para a grade.
+ *
+ * Dentro de um bloco de subdivisão, repetir o nome dela no item é ruído:
+ * o cabeçalho já diz "Ouro", então "MESSIOURO" pode virar só "MESSI".
+ * Também tira o prefixo comum, quando existir.
+ */
+export function rotuloCurto(
+  item: Item,
+  nomeSubdivisao?: string | null
+): string {
+  const base = (item.numero || item.nome).trim();
+  if (!nomeSubdivisao) return base;
+
+  const semAcento = (t: string) =>
+    t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+
+  const chave = semAcento(nomeSubdivisao).replace(/[^A-Z0-9]/g, '');
+  if (chave.length < 3) return base;
+
+  const alvo = semAcento(base);
+
+  // Só corta no começo ou no fim. Cortar no meio destrói o sentido:
+  // "26OURO1" viraria "261", que não diz nada.
+  let curto: string | null = null;
+  if (alvo.startsWith(chave)) {
+    curto = base.slice(chave.length).trim();
+  } else if (alvo.endsWith(chave)) {
+    curto = base.slice(0, base.length - chave.length).trim();
+  }
+
+  if (!curto || curto.length < 1) return base;
+  return curto;
+}
+
+/** Fonte menor conforme o rótulo cresce, para caber sem cortar. */
+export function tamanhoDaFonte(texto: string): number {
+  const n = texto.length;
+  if (n <= 4) return 14;
+  if (n <= 7) return 12;
+  if (n <= 10) return 10.5;
+  if (n <= 14) return 9.5;
+  return 8.5;
+}
