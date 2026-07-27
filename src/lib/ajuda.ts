@@ -116,6 +116,12 @@ Servem para separar páginas, séries ou categorias dentro da mesma coleção, c
 
 Você pode criar pelo botão **Subdivisão** ou durante o cadastro de itens, sem sair da tela.
 
+## Nomes
+
+Itens criados por numeração em série antes desta melhoria ficaram com o nome igual ao número, e a tela mostrava a mesma coisa duas vezes.
+
+O botão **Nomes** troca isso por algo legível: "26OURO1" vira "Ouro 1". O número não muda, e itens que já têm nome de verdade são preservados.
+
 ## Organizar
 
 Se você cadastrou os itens antes de criar as subdivisões, eles ficam soltos. O botão **Organizar** lê o número de cada item, procura o nome da subdivisão dentro dele e faz o vínculo. Ele mostra o que vai fazer antes de aplicar.

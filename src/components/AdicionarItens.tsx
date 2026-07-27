@@ -223,9 +223,14 @@ function PorSerie({
     for (const sub of levas) {
       for (let n = inicio; n <= fim; n++) {
         const codigo = formatar(n, sub);
+        const numeroLegivel = zeros
+          ? String(n).padStart(largura, '0')
+          : String(n);
         lista.push({
           numero: codigo,
-          nome: codigo,
+          // Nome legível: "Ouro 1" em vez de repetir "26OURO1".
+          // Sem subdivisão, fica só o número, e a tela não repete.
+          nome: sub ? `${sub.nome} ${numeroLegivel}` : codigo,
           raridade: raridade || null,
           categoria: categoria || null,
           subdivisao_id: sub ? sub.id : null,
@@ -418,6 +423,12 @@ function PorSerie({
                       {porSubdivisao > 2 ? ' ... ' : ', '}
                       {formatar(fim, sub)}
                     </>
+                  )}
+                  {sub && (
+                    <span style={{ color: T.textMuted }}>
+                      {'  →  '}
+                      {sub.nome} {zeros ? String(inicio).padStart(largura, '0') : inicio}
+                    </span>
                   )}
                 </code>
               </div>

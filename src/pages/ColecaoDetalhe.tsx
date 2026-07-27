@@ -8,6 +8,7 @@ import {
   Search,
   Pencil,
   Wand2,
+  Type,
 } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
@@ -24,8 +25,10 @@ import {
 } from '../lib/api';
 import type { Colecao, Item, Subdivisao } from '../lib/tipos';
 import { RARIDADES } from '../lib/tipos';
+import { descricaoItem, nomeRedundante } from '../lib/rotulos';
 import { UploadImagem } from '../components/UploadImagem';
 import { ModalOrganizar } from '../components/ModalOrganizar';
+import { ModalRenomear } from '../components/ModalRenomear';
 import { InputCategoria } from '../components/InputCategoria';
 import { SugestoesNomes } from '../components/SugestoesNomes';
 import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
@@ -44,7 +47,7 @@ export function ColecaoDetalhe() {
   const [erro, setErro] = useState<string | null>(null);
 
   const [modal, setModal] = useState<
-    'itens' | 'subdivisao' | 'apagar' | 'organizar' | null
+    'itens' | 'subdivisao' | 'apagar' | 'organizar' | 'renomear' | null
   >(null);
   const [busca, setBusca] = useState('');
   const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
@@ -167,6 +170,23 @@ export function ColecaoDetalhe() {
 
         {ehDono && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {itens.some((i) => i.subdivisao_id && nomeRedundante(i)) && (
+              <button
+                type="button"
+                onClick={() => setModal('renomear')}
+                style={{
+                  ...TS.botaoSecundario,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '10px 14px',
+                }}
+              >
+                <Type size={16} />
+                Nomes
+              </button>
+            )}
+
             {subdivisoes.length > 0 &&
               itens.some((i) => !i.subdivisao_id) && (
                 <button
@@ -404,6 +424,20 @@ export function ColecaoDetalhe() {
         />
       )}
 
+      {modal === 'renomear' && (
+        <ModalRenomear
+          itens={itens}
+          subdivisoes={subdivisoes}
+          aoFechar={() => setModal(null)}
+          aoConcluir={async (quantidade) => {
+            setModal(null);
+            setResumo(`${quantidade} itens renomeados.`);
+            await carregar();
+            setTimeout(() => setResumo(null), 6000);
+          }}
+        />
+      )}
+
       {modal === 'apagar' && (
         <Modal titulo="Apagar coleção" aoFechar={() => setModal(null)}>
           <p
@@ -511,20 +545,22 @@ function CartaoItem({
           {item.numero}
         </div>
       )}
-      <div
-        style={{
-          fontFamily: T.fontBody,
-          fontSize: 12.5,
-          color: T.textPrimary,
-          lineHeight: 1.35,
-          overflow: 'hidden',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-        }}
-      >
-        {item.nome}
-      </div>
+      {descricaoItem(item) && (
+        <div
+          style={{
+            fontFamily: T.fontBody,
+            fontSize: 12.5,
+            color: T.textPrimary,
+            lineHeight: 1.35,
+            overflow: 'hidden',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+          }}
+        >
+          {descricaoItem(item)}
+        </div>
+      )}
       {item.raridade && (
         <div
           style={{

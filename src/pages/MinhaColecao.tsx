@@ -32,6 +32,7 @@ import { BarraProgresso } from '../components/BarraProgresso';
 import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
+import { descricaoItem } from '../lib/rotulos';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
 import { usePodeCadastrar } from '../components/AvisoAssinatura';
@@ -832,16 +833,18 @@ function ModalItem({
                   {item.numero}
                 </div>
               )}
-              <div
-                style={{
-                  fontFamily: T.fontBody,
-                  fontSize: 14.5,
-                  color: T.textPrimary,
-                  marginTop: 2,
-                }}
-              >
-                {item.nome}
-              </div>
+              {descricaoItem(item) && (
+                <div
+                  style={{
+                    fontFamily: T.fontBody,
+                    fontSize: 14.5,
+                    color: T.textPrimary,
+                    marginTop: 2,
+                  }}
+                >
+                  {descricaoItem(item)}
+                </div>
+              )}
               {(item.categoria || item.raridade) && (
                 <div
                   style={{
