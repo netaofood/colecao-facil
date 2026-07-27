@@ -113,46 +113,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
 
     async criarColecionador(dados) {
-      // A conta é criada por uma Edge Function, que guarda a chave
-      // service_role no servidor. O navegador nunca vê essa chave.
+      // Chamada direta, sem functions.invoke: assim eu leio o status e o
+      // corpo da resposta sem depender do formato de erro do SDK.
       const { data: sessao } = await supabase.auth.getSession();
       const token = sessao.session?.access_token;
       if (!token) throw new Error('Sessão expirada. Entre novamente.');
 
-      const { data, error } = await supabase.functions.invoke(
-        'criar-colecionador',
-        {
-          body: {
+      const base = import.meta.env.VITE_SUPABASE_URL;
+      const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      let resposta: Response;
+      try {
+        resposta = await fetch(`${base}/functions/v1/criar-colecionador`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            apikey: anon,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             nome: dados.nome.trim(),
             email: dados.email.trim().toLowerCase(),
             senha: dados.senha,
-          },
-        }
-      );
-
-      if (error) {
-        let detalhe = '';
-        const resposta = (error as { context?: Response }).context;
-        if (resposta) {
-          try {
-            const corpo = await resposta.clone().json();
-            detalhe = corpo?.erro ?? corpo?.message ?? '';
-          } catch {
-            try {
-              detalhe = (await resposta.clone().text()).slice(0, 300);
-            } catch {
-              detalhe = '';
-            }
-          }
-          if (!detalhe) detalhe = `A função respondeu ${resposta.status}.`;
-        }
+          }),
+        });
+      } catch {
         throw new Error(
-          detalhe || error.message || 'Não consegui falar com a função criar-colecionador.'
+          'Não consegui alcançar a função criar-colecionador. Verifique se ela foi publicada.'
         );
       }
 
-      if (data && typeof data === 'object' && 'erro' in data) {
-        throw new Error(String((data as { erro: string }).erro));
+      const bruto = await resposta.text();
+      let corpo: { erro?: string; id?: string } = {};
+      try {
+        corpo = JSON.parse(bruto);
+      } catch {
+        corpo = {};
+      }
+
+      if (!resposta.ok) {
+        throw new Error(
+          corpo.erro ||
+            `A função respondeu ${resposta.status}. ${bruto.slice(0, 200)}`
+        );
       }
     },
 
