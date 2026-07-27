@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth';
 import { InstallButton } from '../components/InstallButton';
 import { BotaoTema } from '../components/BotaoTema';
 import { BotaoAjuda } from '../components/BotaoAjuda';
+import { CampoSenha } from '../components/CampoSenha';
 
 type Modo = 'entrar' | 'recuperar';
 
@@ -109,14 +110,11 @@ export function Login() {
               <label style={TS.label} htmlFor="senha">
                 Senha
               </label>
-              <input
+              <CampoSenha
                 id="senha"
-                type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
+                valor={senha}
+                aoMudar={setSenha}
                 autoComplete="current-password"
-                style={TS.input}
               />
             </div>
           )}

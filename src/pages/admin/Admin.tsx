@@ -12,6 +12,7 @@ import { T, TS } from '../../theme';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
 import { Modal } from '../Colecoes';
+import { CampoSenha } from '../../components/CampoSenha';
 
 type Aba = 'painel' | 'colecionadores';
 
@@ -470,14 +471,16 @@ function ModalNovaConta({
 
         <Campo rotulo="Senha provisória" id="nc-senha">
           <div style={{ display: 'flex', gap: 7 }}>
-            <input
-              id="nc-senha"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              required
-              minLength={8}
-              style={{ ...TS.input, flex: 1, fontFamily: 'ui-monospace, monospace' }}
-            />
+            <div style={{ flex: 1 }}>
+              <CampoSenha
+                id="nc-senha"
+                valor={senha}
+                aoMudar={setSenha}
+                autoComplete="new-password"
+                minLength={8}
+                monoespacada
+              />
+            </div>
             <button
               type="button"
               onClick={() => setSenha(gerarSenha())}
