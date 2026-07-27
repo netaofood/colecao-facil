@@ -74,6 +74,14 @@ src/
 └── theme.ts        Design tokens (T, TS)
 ```
 
+### Manual
+
+O ícone **?** ao lado do botão de tema abre a ajuda **da tela em que o usuário está**.
+A rota decide o texto (`src/lib/ajuda.ts`), e rota sem texto próprio cai no manual do início.
+
+Para editar o manual, mexa só em `src/lib/ajuda.ts`. Nenhuma tela precisa ser tocada.
+Formatação aceita: `## título`, `- lista`, `**negrito**`.
+
 ### Temas
 
 Claro e escuro, com as cores em variáveis CSS (`src/index.css`).

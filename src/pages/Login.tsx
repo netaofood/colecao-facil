@@ -7,6 +7,7 @@ import { InstallButton } from '../components/InstallButton';
 import { ModalTermos } from '../components/ModalTermos';
 import { TERMOS_VERSAO } from '../lib/termos';
 import { BotaoTema } from '../components/BotaoTema';
+import { BotaoAjuda } from '../components/BotaoAjuda';
 
 type Modo = 'entrar' | 'cadastrar' | 'recuperar';
 
@@ -112,9 +113,12 @@ export function Login() {
           position: 'absolute',
           top: 16,
           right: 16,
+          display: 'flex',
+          gap: 7,
         }}
       >
         <BotaoTema />
+        <BotaoAjuda />
       </div>
 
       <div style={{ width: '100%', maxWidth: 400 }}>
