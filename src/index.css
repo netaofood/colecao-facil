@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: #000000;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #F0F6FC;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(0, 180, 255, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(0, 180, 255, 0.10);
+}
+
+input::placeholder { color: #5A6675; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0A0E14; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.10);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(0,180,255,0.35); }
+
+/* Evita zoom automático no iOS ao focar campos */
+@media (max-width: 1023px) {
+  input, select, textarea { font-size: 16px !important; }
+}
