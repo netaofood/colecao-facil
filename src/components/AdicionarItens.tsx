@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ListOrdered, Table, FileUp, Plus, Trash2 } from 'lucide-react';
 import { T, TS } from '../theme';
 import { RARIDADES } from '../lib/tipos';
 import type { Subdivisao } from '../lib/tipos';
-import { inserirItens, type NovoItem } from '../lib/api';
+import { inserirItens, listarCategoriasDosItens, type NovoItem } from '../lib/api';
+import { InputCategoria } from './InputCategoria';
 
 type Caminho = 'serie' | 'grid' | 'csv';
 
@@ -21,6 +22,13 @@ export function AdicionarItens({
   aoConcluir,
 }: Props) {
   const [caminho, setCaminho] = useState<Caminho>('serie');
+  const [categorias, setCategorias] = useState<string[]>([]);
+
+  useEffect(() => {
+    listarCategoriasDosItens(colecaoId)
+      .then(setCategorias)
+      .catch(() => setCategorias([]));
+  }, [colecaoId]);
   const [subdivisaoId, setSubdivisaoId] = useState<string>('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -118,8 +126,12 @@ export function AdicionarItens({
         </div>
       )}
 
-      {caminho === 'serie' && <PorSerie salvando={salvando} aoSalvar={salvar} />}
-      {caminho === 'grid' && <PorGrid salvando={salvando} aoSalvar={salvar} />}
+      {caminho === 'serie' && (
+        <PorSerie salvando={salvando} aoSalvar={salvar} categorias={categorias} />
+      )}
+      {caminho === 'grid' && (
+        <PorGrid salvando={salvando} aoSalvar={salvar} categorias={categorias} />
+      )}
       {caminho === 'csv' && <PorCSV salvando={salvando} aoSalvar={salvar} />}
     </div>
   );
@@ -132,15 +144,18 @@ export function AdicionarItens({
 function PorSerie({
   salvando,
   aoSalvar,
+  categorias,
 }: {
   salvando: boolean;
   aoSalvar: (n: NovoItem[]) => void;
+  categorias: string[];
 }) {
   const [de, setDe] = useState('1');
   const [ate, setAte] = useState('100');
   const [prefixo, setPrefixo] = useState('');
   const [zeros, setZeros] = useState(false);
   const [raridade, setRaridade] = useState('');
+  const [categoria, setCategoria] = useState('');
 
   const inicio = Number(de) || 0;
   const fim = Number(ate) || 0;
@@ -162,6 +177,7 @@ function PorSerie({
         numero: codigo,
         nome: codigo,
         raridade: raridade || null,
+        categoria: categoria || null,
       });
     }
     return lista;
@@ -229,6 +245,19 @@ function PorSerie({
             ))}
           </select>
         </div>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={TS.label} htmlFor="cat-serie">
+          Categoria (opcional)
+        </label>
+        <InputCategoria
+          id="cat-serie"
+          valor={categoria}
+          aoMudar={setCategoria}
+          sugestoes={categorias}
+          placeholder="vale para todos os itens da série"
+        />
       </div>
 
       <label
@@ -325,9 +354,11 @@ const LINHA_VAZIA: LinhaGrid = {
 function PorGrid({
   salvando,
   aoSalvar,
+  categorias,
 }: {
   salvando: boolean;
   aoSalvar: (n: NovoItem[]) => void;
+  categorias: string[];
 }) {
   const [linhas, setLinhas] = useState<LinhaGrid[]>(
     Array.from({ length: 8 }, () => ({ ...LINHA_VAZIA }))
@@ -396,10 +427,11 @@ function PorGrid({
                   />
                 </td>
                 <td style={{ padding: 3, width: 130 }}>
-                  <input
-                    value={l.categoria}
-                    onChange={(e) => mudar(i, 'categoria', e.target.value)}
-                    style={{ ...TS.input, padding: '8px 10px', fontSize: 13.5 }}
+                  <InputCategoria
+                    valor={l.categoria}
+                    aoMudar={(v) => mudar(i, 'categoria', v)}
+                    sugestoes={categorias}
+                    compacto
                   />
                 </td>
                 <td style={{ padding: 3, width: 120 }}>

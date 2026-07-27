@@ -8,7 +8,9 @@ import {
   listarOficiais,
   criarColecao,
   adotarColecao,
+  listarCategoriasDasColecoes,
 } from '../lib/api';
+import { InputCategoria } from '../components/InputCategoria';
 import type { ColecaoComProgresso, Colecao } from '../lib/tipos';
 import { BarraProgresso } from '../components/BarraProgresso';
 
@@ -20,6 +22,14 @@ export function Colecoes() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [modal, setModal] = useState<'branco' | 'oficial' | null>(null);
+  const [categorias, setCategorias] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!perfil) return;
+    listarCategoriasDasColecoes(perfil.id)
+      .then(setCategorias)
+      .catch(() => setCategorias([]));
+  }, [perfil]);
 
   const carregar = useCallback(async () => {
     if (!perfil) return;
@@ -117,6 +127,7 @@ export function Colecoes() {
 
       {modal === 'branco' && (
         <ModalNovaColecao
+          categorias={categorias}
           aoFechar={() => setModal(null)}
           aoCriar={async (dados) => {
             const nova = await criarColecao({ ...dados, dono_id: perfil!.id });
@@ -303,9 +314,11 @@ function Aviso({ texto }: { texto: string }) {
 /* -------------------------------------------------------------- */
 
 function ModalNovaColecao({
+  categorias,
   aoFechar,
   aoCriar,
 }: {
+  categorias: string[];
   aoFechar: () => void;
   aoCriar: (dados: {
     nome: string;
@@ -354,12 +367,12 @@ function ModalNovaColecao({
         </CampoModal>
 
         <CampoModal rotulo="Categoria" id="cat-colecao">
-          <input
+          <InputCategoria
             id="cat-colecao"
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
+            valor={categoria}
+            aoMudar={setCategoria}
+            sugestoes={categorias}
             placeholder="ex: Figurinhas"
-            style={TS.input}
           />
         </CampoModal>
 

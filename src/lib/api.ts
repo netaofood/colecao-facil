@@ -662,3 +662,49 @@ export async function vincularSubdivisao(
     if (error) throw new Error(error.message);
   }
 }
+
+/* ---------------------------------------------------------------- */
+/* CATEGORIAS JÁ USADAS (para sugestão de digitação)                 */
+/* ---------------------------------------------------------------- */
+
+function limparLista(valores: (string | null)[]): string[] {
+  const vistos = new Map<string, string>();
+  for (const v of valores) {
+    const texto = v?.trim();
+    if (!texto) continue;
+    // Ignora diferença de maiúsculas: "Brasil" e "brasil" viram um só
+    const chave = texto.toLowerCase();
+    if (!vistos.has(chave)) vistos.set(chave, texto);
+  }
+  return [...vistos.values()].sort((a, b) =>
+    a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
+  );
+}
+
+/** Categorias já usadas nos itens de uma coleção. */
+export async function listarCategoriasDosItens(
+  colecaoId: string
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('itens')
+    .select('categoria')
+    .eq('colecao_id', colecaoId)
+    .not('categoria', 'is', null);
+
+  if (error) throw new Error(error.message);
+  return limparLista((data ?? []).map((l) => (l as { categoria: string | null }).categoria));
+}
+
+/** Categorias já usadas nas coleções do próprio usuário. */
+export async function listarCategoriasDasColecoes(
+  usuarioId: string
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('colecoes')
+    .select('categoria')
+    .eq('dono_id', usuarioId)
+    .not('categoria', 'is', null);
+
+  if (error) throw new Error(error.message);
+  return limparLista((data ?? []).map((l) => (l as { categoria: string | null }).categoria));
+}
