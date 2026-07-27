@@ -552,7 +552,7 @@ export function MinhaColecao() {
         <ModalItem
           item={aberto}
           linha={meus.get(aberto.id)}
-          ehDono={perfil?.id === colecao.dono_id}
+          podeEditarFoto={perfil?.id === colecao.dono_id && podeCadastrar}
           aoFechar={() => setAberto(null)}
           aoAlterar={(status, qtd) => void alterar(aberto, status, qtd)}
           aoTrocarFoto={async (url) => {
@@ -719,14 +719,14 @@ function Celula({
 function ModalItem({
   item,
   linha,
-  ehDono,
+  podeEditarFoto,
   aoFechar,
   aoAlterar,
   aoTrocarFoto,
 }: {
   item: Item;
   linha?: ItemUsuario;
-  ehDono: boolean;
+  podeEditarFoto: boolean;
   aoFechar: () => void;
   aoAlterar: (status: StatusItem, quantidade?: number) => void;
   aoTrocarFoto: (url: string | null) => Promise<void>;
@@ -773,19 +773,25 @@ function ModalItem({
                 display: 'block',
               }}
             />
-            {ehDono && (
-              <div style={{ position: 'absolute', top: 8, right: 8 }}>
-                <UploadImagem
-                  valor={null}
-                  aoMudar={(url) => void aoTrocarFoto(url)}
-                  pasta="itens"
-                  formato="quadrado"
-                  tamanho={38}
-                />
+            {podeEditarFoto && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  padding: '10px 12px',
+                  background:
+                    'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <TrocarFoto aoTrocar={aoTrocarFoto} />
               </div>
             )}
           </div>
-        ) : ehDono ? (
+        ) : podeEditarFoto ? (
           <div
             style={{
               padding: '16px 18px 0',
@@ -938,6 +944,27 @@ function ModalItem({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Botão largo para trocar a foto existente, legível sobre qualquer imagem. */
+function TrocarFoto({
+  aoTrocar,
+}: {
+  aoTrocar: (url: string | null) => Promise<void>;
+}) {
+  return (
+    <div style={{ width: '100%', maxWidth: 220 }}>
+      <UploadImagem
+        valor={null}
+        aoMudar={(url) => void aoTrocar(url)}
+        pasta="itens"
+        formato="quadrado"
+        tamanho={46}
+        rotulo="Trocar foto"
+        largura="100%"
+      />
     </div>
   );
 }

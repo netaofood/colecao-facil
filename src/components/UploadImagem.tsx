@@ -11,6 +11,10 @@ interface Props {
   pasta: string;
   formato?: 'quadrado' | 'retrato' | 'circulo';
   tamanho?: number;
+  /** Texto do botão quando não há imagem */
+  rotulo?: string;
+  /** Largura fixa, útil para ocupar a faixa inteira */
+  largura?: number | string;
 }
 
 export function UploadImagem({
@@ -19,6 +23,8 @@ export function UploadImagem({
   pasta,
   formato = 'quadrado',
   tamanho = 110,
+  rotulo = 'Enviar foto',
+  largura,
 }: Props) {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -53,20 +59,23 @@ export function UploadImagem({
           onClick={() => input.current?.click()}
           disabled={enviando}
           style={{
-            width: tamanho,
-            aspectRatio: proporcao,
+            width: largura ?? tamanho,
+            aspectRatio: largura ? undefined : proporcao,
+            minHeight: largura ? tamanho : undefined,
             flexShrink: 0,
-            background: valor ? 'transparent' : T.bgElevated,
-            border: `1.5px dashed ${valor ? 'transparent' : T.border}`,
+            background: valor && !largura ? 'transparent' : T.bgElevated,
+            border: largura
+              ? `1.5px solid ${T.neonBorder}`
+              : `1.5px dashed ${valor ? 'transparent' : T.border}`,
             borderRadius: raio,
             cursor: enviando ? 'wait' : 'pointer',
             overflow: 'hidden',
             position: 'relative',
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: largura ? 'row' : 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 6,
+            gap: largura ? 8 : 6,
             padding: 0,
           }}
         >
@@ -78,15 +87,16 @@ export function UploadImagem({
             />
           ) : (
             <>
-              <ImagePlus size={20} color={T.textMuted} />
+              <ImagePlus size={largura ? 17 : 20} color={largura ? T.neon : T.textMuted} />
               <span
                 style={{
                   fontFamily: T.fontBody,
-                  fontSize: 10.5,
-                  color: T.textMuted,
+                  fontSize: largura ? 12.5 : 10.5,
+                  fontWeight: largura ? 600 : 400,
+                  color: largura ? T.textPrimary : T.textMuted,
                 }}
               >
-                Enviar foto
+                {rotulo}
               </span>
             </>
           )}

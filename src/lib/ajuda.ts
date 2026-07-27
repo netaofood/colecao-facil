@@ -85,6 +85,12 @@ A foto aparece na grade, colorida quando você tem o item e cinza quando falta.
 
 Se a coleção tiver subdivisões, cada uma vira uma caixa com o próprio progresso. Clique no título da caixa para recolher.
 
+## Foto do item
+
+Toque no item e envie a foto ali mesmo. Já tendo foto, aparece o botão **Trocar foto** sobre a imagem.
+
+Não precisa ir até o catálogo para isso.
+
 ## Adicionar itens
 
 O botão **Adicionar itens** no topo abre o cadastro sem sair desta tela.
