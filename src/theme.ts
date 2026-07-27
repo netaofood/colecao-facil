@@ -6,49 +6,54 @@
 
 export const T = {
   // --- Cores base ---
-  bg: '#000000',
-  bgElevated: '#0A0E14',
-  bgCard: '#0F1520',
-  bgHover: '#151D2B',
+  bg: 'var(--bg)',
+  bgElevated: 'var(--bg-elevated)',
+  bgCard: 'var(--bg-card)',
+  bgHover: 'var(--bg-hover)',
 
   // --- Azul neon (cor primária) ---
-  neon: '#00B4FF',
-  neonDark: '#0066CC',
-  neonBorder: 'rgba(0, 180, 255, 0.45)',
-  neonFaint: 'rgba(0, 180, 255, 0.08)',
-  neonSoft: 'rgba(0, 180, 255, 0.18)',
+  neon: 'var(--neon)',
+  neonDark: 'var(--neon-dark)',
+  neonBorder: 'var(--neon-border)',
+  neonFaint: 'var(--neon-faint)',
+  neonSoft: 'var(--neon-soft)',
 
   // --- Brilhos ---
-  glowNeon: '0 0 20px rgba(0, 180, 255, 0.35)',
-  glowNeonSm: '0 0 10px rgba(0, 180, 255, 0.18)',
+  glowNeon: 'var(--glow)',
+  glowNeonSm: 'var(--glow-sm)',
 
   // --- Texto ---
-  textPrimary: '#F0F6FC',
-  textSecondary: '#8B98A9',
-  textMuted: '#5A6675',
+  textPrimary: 'var(--texto-primario)',
+  textSecondary: 'var(--texto-secundario)',
+  textMuted: 'var(--texto-apagado)',
 
   // --- Bordas ---
-  border: 'rgba(255, 255, 255, 0.08)',
-  borderStrong: 'rgba(255, 255, 255, 0.16)',
+  border: 'var(--borda)',
+  borderStrong: 'var(--borda-forte)',
 
   // --- Status (usados nos itens da coleção) ---
-  tenho: '#22C55E',
-  tenhoFaint: 'rgba(34, 197, 94, 0.12)',
-  falta: '#5A6675',
-  faltaFaint: 'rgba(90, 102, 117, 0.12)',
-  repetida: '#F59E0B',
-  repetidaFaint: 'rgba(245, 158, 11, 0.12)',
+  tenho: 'var(--tenho)',
+  tenhoFaint: 'var(--tenho-faint)',
+  falta: 'var(--falta)',
+  faltaFaint: 'var(--falta-faint)',
+  repetida: 'var(--repetida)',
+  repetidaFaint: 'var(--repetida-faint)',
 
   // --- Feedback ---
-  sucesso: '#22C55E',
-  erro: '#EF4444',
-  erroFaint: 'rgba(239, 68, 68, 0.10)',
-  aviso: '#F59E0B',
+  sucesso: 'var(--sucesso)',
+  erro: 'var(--erro)',
+  erroFaint: 'var(--erro-faint)',
+  aviso: 'var(--aviso)',
 
   // --- WhatsApp (cor oficial da marca) ---
-  whatsapp: '#25D366',
-  whatsappFaint: 'rgba(37, 211, 102, 0.10)',
-  whatsappBorder: 'rgba(37, 211, 102, 0.45)',
+  whatsapp: 'var(--whatsapp)',
+  whatsappFaint: 'var(--whatsapp-faint)',
+  whatsappBorder: 'var(--whatsapp-border)',
+
+  // --- Texto sobre fundo colorido ---
+  textoBotao: 'var(--texto-botao)',
+  repetidaTexto: 'var(--repetida-texto)',
+  avisoFaint: 'var(--aviso-faint)',
 
   // --- Forma ---
   radius: '10px',
@@ -77,7 +82,7 @@ export const TS = {
 
   botaoPrimario: {
     background: T.neon,
-    color: '#00121F',
+    color: 'var(--texto-botao)',
     border: 'none',
     borderRadius: T.radius,
     padding: '12px 20px',

@@ -1,37 +1,165 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; }
+/* ============================================================
+   TEMA ESCURO (padrão)
+   ============================================================ */
+:root {
+  --bg: #000000;
+  --bg-elevated: #0a0e14;
+  --bg-card: #0f1520;
+  --bg-hover: #151d2b;
 
-html, body, #root {
+  --neon: #00b4ff;
+  --neon-dark: #0066cc;
+  --neon-border: rgba(0, 180, 255, 0.45);
+  --neon-faint: rgba(0, 180, 255, 0.08);
+  --neon-soft: rgba(0, 180, 255, 0.18);
+
+  --glow: 0 0 20px rgba(0, 180, 255, 0.35);
+  --glow-sm: 0 0 10px rgba(0, 180, 255, 0.18);
+
+  --texto-primario: #f0f6fc;
+  --texto-secundario: #8b98a9;
+  --texto-apagado: #5a6675;
+  --texto-botao: #00121f;
+
+  --borda: rgba(255, 255, 255, 0.08);
+  --borda-forte: rgba(255, 255, 255, 0.16);
+
+  --tenho: #22c55e;
+  --tenho-faint: rgba(34, 197, 94, 0.12);
+  --falta: #5a6675;
+  --falta-faint: rgba(90, 102, 117, 0.12);
+  --repetida: #f59e0b;
+  --repetida-faint: rgba(245, 158, 11, 0.12);
+  --repetida-texto: #1a1000;
+
+  --sucesso: #22c55e;
+  --erro: #ef4444;
+  --erro-faint: rgba(239, 68, 68, 0.1);
+  --aviso: #f59e0b;
+  --aviso-faint: rgba(245, 158, 11, 0.08);
+
+  --whatsapp: #25d366;
+  --whatsapp-faint: rgba(37, 211, 102, 0.1);
+  --whatsapp-border: rgba(37, 211, 102, 0.45);
+
+  --trilho: #0a0e14;
+  --polegar: rgba(255, 255, 255, 0.1);
+
+  color-scheme: dark;
+}
+
+/* ============================================================
+   TEMA CLARO
+   Azul mais escuro para manter contraste legível sobre branco.
+   ============================================================ */
+[data-tema='claro'] {
+  --bg: #ffffff;
+  --bg-elevated: #f5f8fa;
+  --bg-card: #ffffff;
+  --bg-hover: #e9eef3;
+
+  --neon: #0074cc;
+  --neon-dark: #00529a;
+  --neon-border: rgba(0, 116, 204, 0.4);
+  --neon-faint: rgba(0, 116, 204, 0.07);
+  --neon-soft: rgba(0, 116, 204, 0.16);
+
+  --glow: 0 2px 10px rgba(0, 116, 204, 0.18);
+  --glow-sm: 0 1px 4px rgba(0, 116, 204, 0.12);
+
+  --texto-primario: #0b1520;
+  --texto-secundario: #4a5763;
+  --texto-apagado: #78858f;
+  --texto-botao: #ffffff;
+
+  --borda: rgba(11, 21, 32, 0.12);
+  --borda-forte: rgba(11, 21, 32, 0.22);
+
+  --tenho: #15803d;
+  --tenho-faint: rgba(21, 128, 61, 0.1);
+  --falta: #94a3b8;
+  --falta-faint: rgba(148, 163, 184, 0.14);
+  --repetida: #b45309;
+  --repetida-faint: rgba(180, 83, 9, 0.1);
+  --repetida-texto: #ffffff;
+
+  --sucesso: #15803d;
+  --erro: #c62828;
+  --erro-faint: rgba(198, 40, 40, 0.08);
+  --aviso: #b45309;
+  --aviso-faint: rgba(180, 83, 9, 0.08);
+
+  --whatsapp: #0f8a48;
+  --whatsapp-faint: rgba(15, 138, 72, 0.08);
+  --whatsapp-border: rgba(15, 138, 72, 0.4);
+
+  --trilho: #e9eef3;
+  --polegar: rgba(11, 21, 32, 0.18);
+
+  color-scheme: light;
+}
+
+/* ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: #000000;
+  background: var(--bg);
 }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: #F0F6FC;
+  color: var(--texto-primario);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
-input:focus, textarea:focus, select:focus {
-  border-color: rgba(0, 180, 255, 0.6) !important;
-  box-shadow: 0 0 0 3px rgba(0, 180, 255, 0.10);
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--neon) !important;
+  box-shadow: 0 0 0 3px var(--neon-faint);
 }
 
-input::placeholder { color: #5A6675; }
+input::placeholder,
+textarea::placeholder {
+  color: var(--texto-apagado);
+}
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #0A0E14; }
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--trilho);
+}
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.10);
+  background: var(--polegar);
   border-radius: 5px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,180,255,0.35); }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-border);
+}
 
 /* Evita zoom automático no iOS ao focar campos */
 @media (max-width: 1023px) {
-  input, select, textarea { font-size: 16px !important; }
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }

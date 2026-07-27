@@ -20,6 +20,24 @@
     <meta property="og:locale" content="pt_BR" />
   </head>
   <body>
+    <script>
+      // Aplica o tema antes de pintar a tela, para não piscar.
+      (function () {
+        try {
+          var t = localStorage.getItem('colecao-facil-tema');
+          if (!t) {
+            t = window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'claro'
+              : 'escuro';
+          }
+          if (t === 'claro') {
+            document.documentElement.setAttribute('data-tema', 'claro');
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', '#FFFFFF');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

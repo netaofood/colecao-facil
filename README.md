@@ -63,6 +63,16 @@ src/
 └── theme.ts        Design tokens (T, TS)
 ```
 
+### Temas
+
+Claro e escuro, com as cores em variáveis CSS (`src/index.css`).
+O `theme.ts` só aponta para elas, então trocar de tema não re-renderiza nada.
+
+A escolha fica no `localStorage`; sem escolha salva, segue a preferência do sistema.
+Um script inline no `index.html` aplica o tema antes da primeira pintura, para não piscar.
+
+No claro o azul escurece de `#00B4FF` para `#0074CC`, senão o contraste sobre branco fica ilegível.
+
 ### Layout responsivo
 
 Um único breakpoint em **1024px**, definido em `theme.ts` e lido por `useDispositivo`.

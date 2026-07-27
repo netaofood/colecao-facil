@@ -14,8 +14,12 @@ import { Descobrir } from './pages/Descobrir';
 import { Relatorios } from './pages/Relatorios';
 import { PerfilPublicoPagina } from './pages/PerfilPublicoPagina';
 import { T } from './theme';
+import { useTema } from './hooks/useTema';
 
 export default function App() {
+  // Garante o tema aplicado em qualquer rota, mesmo sem o botão na tela
+  useTema();
+
   return (
     <AuthProvider>
       <BrowserRouter>

@@ -15,6 +15,7 @@ import {
 import { T, TS, RODAPE } from '../theme';
 import { useDispositivo } from '../hooks/useDispositivo';
 import { useAuth } from '../lib/auth';
+import { BotaoTema } from './BotaoTema';
 
 interface Destino {
   para: string;
@@ -189,6 +190,8 @@ function LayoutDesktop({
               )}
             </div>
           )}
+          <BotaoTema variant="completo" compacto={colapsado} />
+
           <button
             type="button"
             onClick={async () => {
@@ -277,16 +280,26 @@ function LayoutMobile({
           borderBottom: `1px solid ${T.border}`,
         }}
       >
-        <span
+        <div
           style={{
-            ...TS.titulo,
-            fontSize: 15,
-            color: T.neon,
-            textShadow: T.glowNeonSm,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
           }}
         >
-          COLEÇÃO FÁCIL
-        </span>
+          <span
+            style={{
+              ...TS.titulo,
+              fontSize: 15,
+              color: T.neon,
+              textShadow: T.glowNeonSm,
+            }}
+          >
+            COLEÇÃO FÁCIL
+          </span>
+          <BotaoTema />
+        </div>
       </header>
 
       <main

@@ -241,6 +241,7 @@ export function MinhaColecao() {
         <Pilula
           ativa={filtro === 'falta'}
           cor={T.falta}
+          fundo={T.faltaFaint}
           aoClicar={() => setFiltro('falta')}
         >
           Faltam · {faltantes}
@@ -248,6 +249,7 @@ export function MinhaColecao() {
         <Pilula
           ativa={filtro === 'tenho'}
           cor={T.tenho}
+          fundo={T.tenhoFaint}
           aoClicar={() => setFiltro('tenho')}
         >
           Tenho · {totais.tenho - totais.repetidas}
@@ -255,6 +257,7 @@ export function MinhaColecao() {
         <Pilula
           ativa={filtro === 'repetida'}
           cor={T.repetida}
+          fundo={T.repetidaFaint}
           aoClicar={() => setFiltro('repetida')}
         >
           Repetidas · {totais.repetidas}
@@ -498,7 +501,7 @@ function Celula({
             top: 3,
             right: 3,
             background: T.repetida,
-            color: '#1A1000',
+            color: T.repetidaTexto,
             borderRadius: 99,
             minWidth: 16,
             height: 16,
@@ -913,11 +916,13 @@ function BotaoFerramenta({
 function Pilula({
   ativa,
   cor = T.neon,
+  fundo = T.neonFaint,
   aoClicar,
   children,
 }: {
   ativa: boolean;
   cor?: string;
+  fundo?: string;
   aoClicar: () => void;
   children: React.ReactNode;
 }) {
@@ -929,7 +934,7 @@ function Pilula({
         padding: '7px 13px',
         borderRadius: 99,
         border: `1.5px solid ${ativa ? cor : T.border}`,
-        background: ativa ? `${cor}1A` : 'transparent',
+        background: ativa ? fundo : 'transparent',
         color: ativa ? cor : T.textSecondary,
         fontSize: 12.5,
         fontWeight: ativa ? 700 : 500,

@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth';
 import { InstallButton } from '../components/InstallButton';
 import { ModalTermos } from '../components/ModalTermos';
 import { TERMOS_VERSAO } from '../lib/termos';
+import { BotaoTema } from '../components/BotaoTema';
 
 type Modo = 'entrar' | 'cadastrar' | 'recuperar';
 
@@ -103,8 +104,19 @@ export function Login() {
         justifyContent: 'center',
         padding: 20,
         boxSizing: 'border-box',
+        position: 'relative',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+        }}
+      >
+        <BotaoTema />
+      </div>
+
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 26 }}>
           <h1

@@ -7,6 +7,7 @@ import type { PerfilPublico, RepetidaPublica } from '../lib/api';
 import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
+import { BotaoTema } from '../components/BotaoTema';
 
 export function PerfilPublicoPagina() {
   const { apelido } = useParams<{ apelido: string }>();
@@ -58,8 +59,13 @@ export function PerfilPublicoPagina() {
         alignItems: 'center',
         padding: '28px 16px',
         boxSizing: 'border-box',
+        position: 'relative',
       }}
     >
+      <div style={{ position: 'absolute', top: 16, right: 16 }}>
+        <BotaoTema />
+      </div>
+
       <div style={{ width: '100%', maxWidth: 640 }}>
         <Link
           to="/"

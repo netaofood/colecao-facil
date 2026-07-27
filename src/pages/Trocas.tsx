@@ -68,7 +68,7 @@ export function Trocas() {
           style={{
             ...TS.card,
             borderColor: T.aviso,
-            background: 'rgba(245,158,11,0.08)',
+            background: T.avisoFaint,
             marginBottom: 18,
             display: 'flex',
             gap: 11,
