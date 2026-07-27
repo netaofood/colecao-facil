@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth';
 import { ModalTermos } from '../components/ModalTermos';
 import { BotaoTema } from '../components/BotaoTema';
 import { TERMOS_VERSAO } from '../lib/termos';
+import { Logo } from '../components/Logo';
 
 /**
  * Aparece uma única vez, no primeiro acesso da pessoa.
@@ -64,6 +65,15 @@ export function PrimeiroAcesso() {
 
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}
+          >
+            <Logo variante="simbolo" altura={62} />
+          </div>
           <h1
             style={{
               ...TS.titulo,

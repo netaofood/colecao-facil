@@ -11,11 +11,12 @@ import {
   PanelLeftClose,
   PanelLeft,
 } from 'lucide-react';
-import { T, TS, RODAPE } from '../theme';
+import { T, RODAPE } from '../theme';
 import { useDispositivo } from '../hooks/useDispositivo';
 import { useAuth } from '../lib/auth';
 import { BotaoTema } from './BotaoTema';
 import { BotaoAjuda } from './BotaoAjuda';
+import { LogoLinha, Logo } from './Logo';
 
 interface Destino {
   para: string;
@@ -96,23 +97,16 @@ function LayoutDesktop({
             borderBottom: `1px solid ${T.border}`,
           }}
         >
-          {!colapsado && (
-            <span
-              style={{
-                ...TS.titulo,
-                fontSize: 16,
-                color: T.neon,
-                textShadow: T.glowNeonSm,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              COLEÇÃO FÁCIL
-            </span>
+          {colapsado ? (
+            <Logo variante="simbolo" altura={26} />
+          ) : (
+            <LogoLinha tamanho={26} />
           )}
           <button
             type="button"
             onClick={() => setColapsado((c) => !c)}
             aria-label={colapsado ? 'Expandir menu' : 'Recolher menu'}
+            title={colapsado ? 'Expandir menu' : 'Recolher menu'}
             style={{
               background: 'transparent',
               border: 'none',
@@ -298,16 +292,7 @@ function LayoutMobile({
             gap: 10,
           }}
         >
-          <span
-            style={{
-              ...TS.titulo,
-              fontSize: 15,
-              color: T.neon,
-              textShadow: T.glowNeonSm,
-            }}
-          >
-            COLEÇÃO FÁCIL
-          </span>
+          <LogoLinha tamanho={24} />
           <div style={{ display: 'flex', gap: 7 }}>
             <BotaoTema />
             <BotaoAjuda />

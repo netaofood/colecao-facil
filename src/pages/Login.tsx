@@ -5,6 +5,7 @@ import { InstallButton } from '../components/InstallButton';
 import { BotaoTema } from '../components/BotaoTema';
 import { BotaoAjuda } from '../components/BotaoAjuda';
 import { CampoSenha } from '../components/CampoSenha';
+import { Logo } from '../components/Logo';
 
 type Modo = 'entrar' | 'recuperar';
 
@@ -66,17 +67,9 @@ export function Login() {
 
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: 26 }}>
-          <h1
-            style={{
-              ...TS.titulo,
-              fontSize: 26,
-              color: T.neon,
-              textShadow: T.glowNeon,
-              margin: 0,
-            }}
-          >
-            COLEÇÃO FÁCIL
-          </h1>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <Logo altura={132} />
+          </div>
           <p
             style={{
               fontFamily: T.fontBody,

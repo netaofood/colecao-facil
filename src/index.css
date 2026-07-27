@@ -155,6 +155,14 @@ textarea::placeholder {
   background: var(--neon-border);
 }
 
+/* Marca: troca a versão conforme o tema */
+[data-tema='claro'] .marca-escuro {
+  display: none !important;
+}
+[data-tema='claro'] .marca-claro {
+  display: block !important;
+}
+
 /* Evita zoom automático no iOS ao focar campos */
 @media (max-width: 1023px) {
   input,
