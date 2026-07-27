@@ -702,6 +702,25 @@ export async function listarCategoriasDoUsuario(
 }
 
 
+/**
+ * Nomes de subdivisão já usados em qualquer coleção do usuário.
+ * Serve de sugestão ao criar uma nova.
+ */
+export async function listarNomesSubdivisoesDoUsuario(
+  usuarioId: string
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('subdivisoes')
+    .select('nome, colecoes!inner(dono_id)')
+    .eq('colecoes.dono_id', usuarioId)
+    .limit(1000);
+
+  if (error) throw new Error(error.message);
+  return limparLista(
+    (data ?? []).map((l) => (l as { nome: string | null }).nome)
+  );
+}
+
 /** Categorias já usadas nas coleções do próprio usuário. */
 export async function listarCategoriasDasColecoes(
   usuarioId: string

@@ -21,6 +21,7 @@ import {
   apagarColecao,
   atualizarItem,
   listarCategoriasDoUsuario,
+  listarNomesSubdivisoesDoUsuario,
 } from '../lib/api';
 import type { Colecao, Item, Subdivisao } from '../lib/tipos';
 import { RARIDADES } from '../lib/tipos';
@@ -50,6 +51,7 @@ export function ColecaoDetalhe() {
   const [resumo, setResumo] = useState<string | null>(null);
   const [editando, setEditando] = useState<Item | null>(null);
   const [categorias, setCategorias] = useState<string[]>([]);
+  const [nomesSubdivisao, setNomesSubdivisao] = useState<string[]>([]);
 
   const carregar = useCallback(async () => {
     if (!id) return;
@@ -78,7 +80,10 @@ export function ColecaoDetalhe() {
     listarCategoriasDoUsuario(perfil.id)
       .then(setCategorias)
       .catch(() => setCategorias([]));
-  }, [perfil, itens.length]);
+    listarNomesSubdivisoesDoUsuario(perfil.id)
+      .then(setNomesSubdivisao)
+      .catch(() => setNomesSubdivisao([]));
+  }, [perfil, itens.length, subdivisoes.length]);
 
   if (carregando) return <Aviso texto="Carregando..." />;
   if (erro) return <Aviso texto={erro} erro />;
@@ -367,6 +372,7 @@ export function ColecaoDetalhe() {
         <ModalSubdivisao
           colecaoId={colecao.id}
           subdivisoes={subdivisoes}
+          sugestoes={nomesSubdivisao}
           aoFechar={() => setModal(null)}
           aoMudar={carregar}
         />
@@ -718,11 +724,13 @@ function ModalEditarItem({
 function ModalSubdivisao({
   colecaoId,
   subdivisoes,
+  sugestoes,
   aoFechar,
   aoMudar,
 }: {
   colecaoId: string;
   subdivisoes: Subdivisao[];
+  sugestoes: string[];
   aoFechar: () => void;
   aoMudar: () => Promise<void>;
 }) {
@@ -782,11 +790,25 @@ function ModalSubdivisao({
         style={{ display: 'flex', gap: 8 }}
       >
         <input
+          list="sugestoes-sub-modal"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder="ex: Página 1"
+          autoComplete="off"
           style={{ ...TS.input, flex: 1 }}
         />
+        <datalist id="sugestoes-sub-modal">
+          {sugestoes
+            .filter(
+              (n) =>
+                !subdivisoes.some(
+                  (s) => s.nome.toLowerCase() === n.toLowerCase()
+                )
+            )
+            .map((n) => (
+              <option key={n} value={n} />
+            ))}
+        </datalist>
         <button
           type="submit"
           disabled={salvando || !nome.trim()}

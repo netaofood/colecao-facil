@@ -8,6 +8,7 @@ import {
   inserirItens,
   listarCategoriasDoUsuario,
   criarSubdivisao,
+  listarNomesSubdivisoesDoUsuario,
   type NovoItem,
 } from '../lib/api';
 import { InputCategoria } from './InputCategoria';
@@ -35,11 +36,16 @@ export function AdicionarItens({
   const [subs, setSubs] = useState<Subdivisao[]>(subdivisoes);
   useEffect(() => setSubs(subdivisoes), [subdivisoes]);
 
+  const [nomesSubdivisao, setNomesSubdivisao] = useState<string[]>([]);
+
   useEffect(() => {
     if (!perfil) return;
     listarCategoriasDoUsuario(perfil.id)
       .then(setCategorias)
       .catch(() => setCategorias([]));
+    listarNomesSubdivisoesDoUsuario(perfil.id)
+      .then(setNomesSubdivisao)
+      .catch(() => setNomesSubdivisao([]));
   }, [perfil]);
   const [subdivisaoId, setSubdivisaoId] = useState<string>('');
   const [salvando, setSalvando] = useState(false);
@@ -102,6 +108,7 @@ export function AdicionarItens({
       <SeletorSubdivisao
         colecaoId={colecaoId}
         subdivisoes={subs}
+        sugestoes={nomesSubdivisao}
         valor={subdivisaoId}
         aoMudar={setSubdivisaoId}
         aoCriar={(nova) => {
@@ -747,18 +754,24 @@ const NOVA = '__nova__';
 function SeletorSubdivisao({
   colecaoId,
   subdivisoes,
+  sugestoes,
   valor,
   aoMudar,
   aoCriar,
 }: {
   colecaoId: string;
   subdivisoes: Subdivisao[];
+  sugestoes: string[];
   valor: string;
   aoMudar: (v: string) => void;
   aoCriar: (nova: Subdivisao) => void;
 }) {
   const [criando, setCriando] = useState(false);
   const [nome, setNome] = useState('');
+
+  // Não sugere o que esta coleção já tem
+  const jaTem = new Set(subdivisoes.map((s) => s.nome.toLowerCase()));
+  const disponiveis = sugestoes.filter((n) => !jaTem.has(n.toLowerCase()));
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -804,6 +817,7 @@ function SeletorSubdivisao({
         <>
           <div style={{ display: 'flex', gap: 7 }}>
             <input
+              list="sugestoes-subdivisao"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               onKeyDown={(e) => {
@@ -814,9 +828,15 @@ function SeletorSubdivisao({
                 if (e.key === 'Escape') encerrar();
               }}
               placeholder="ex: Ouro"
+              autoComplete="off"
               autoFocus
               style={{ ...TS.input, flex: 1 }}
             />
+            <datalist id="sugestoes-subdivisao">
+              {disponiveis.map((n) => (
+                <option key={n} value={n} />
+              ))}
+            </datalist>
             <button
               type="button"
               onClick={() => void salvar()}
