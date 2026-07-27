@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Plus,
-  BadgeCheck,
   Layers,
   Trash2,
   Search,
@@ -151,7 +150,6 @@ export function ColecaoDetalhe() {
             }}
           >
             {colecao.nome}
-            {colecao.oficial && <BadgeCheck size={18} color={T.neon} />}
           </h1>
           <div
             style={{

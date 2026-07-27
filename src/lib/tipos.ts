@@ -13,7 +13,6 @@ export interface Colecao {
   capa_url: string | null;
   categoria: string | null;
   ano: number | null;
-  oficial: boolean;
   visibilidade: Visibilidade;
   arquivada: boolean;
   colecao_origem_id: string | null;

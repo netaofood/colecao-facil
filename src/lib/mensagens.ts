@@ -37,9 +37,6 @@ export const msg = {
     return partes.join('\n') + ASSINATURA;
   },
 
-  /** Convite genérico para o app */
-  convite: (url: string) =>
-    `Tô usando o Coleção Fácil pra organizar minhas coleções e achar trocas 📱\n\n${url}${ASSINATURA}`,
 };
 
 /** Monta a URL do wa.me com a mensagem já codificada. */

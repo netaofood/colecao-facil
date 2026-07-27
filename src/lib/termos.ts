@@ -17,7 +17,7 @@ O Coleção Fácil é uma ferramenta para você organizar suas coleções, regis
 
 ## 2. Quem pode usar
 
-O cadastro é restrito a maiores de 18 anos e feito por convite. Ao criar sua conta, você declara ter 18 anos ou mais e que as informações fornecidas são verdadeiras.
+O uso é restrito a maiores de 18 anos. As contas são criadas pelo administrador. No primeiro acesso, você declara ter 18 anos ou mais e que as informações fornecidas são verdadeiras.
 
 ## 3. Trocas entre colecionadores
 

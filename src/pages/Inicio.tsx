@@ -37,7 +37,7 @@ export function Inicio() {
         gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
         gap: 14,
       }}>
-        <Atalho para="/colecoes" Icone={Library} titulo="Minhas coleções" texto="Criar, adotar e acompanhar o progresso." />
+        <Atalho para="/colecoes" Icone={Library} titulo="Minhas coleções" texto="Criar coleções e acompanhar seu progresso." />
         <Atalho para="/trocas" Icone={Repeat} titulo="Trocas" texto="Achar quem tem o que te falta." />
         <Atalho para="/relatorios" Icone={BarChart3} titulo="Relatórios" texto="Seu progresso e exportação em CSV." />
       </div>

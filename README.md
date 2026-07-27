@@ -125,7 +125,22 @@ Rodar em ordem no SQL Editor do Supabase:
 
 - `0000_reset.sql` — derruba tudo. Só para recriar do zero.
 - `0001_init.sql` — schema completo.
-- `0002_convites_termos_privacidade.sql` — convites, idade mínima, termos, perfil público.
+- `0002_convites_termos_privacidade.sql` — idade mínima, termos, perfil público.
+- `0003_cadastro_pelo_admin.sql` — cadastro só pelo super admin, aceite no primeiro acesso.
+
+> **Depois do 0003:** desligue o autocadastro em Supabase → Authentication →
+> Sign In / Providers → Email → desmarcar "Allow new users to sign up".
+> Sem isso, qualquer pessoa ainda cria conta pela API.
+
+## Edge Functions
+
+`supabase/functions/criar-colecionador` cria as contas. Existe porque isso exige
+a chave `service_role`, que **não pode ficar no navegador**.
+
+```bash
+supabase link --project-ref cezdpszraznufpotucgr
+supabase functions deploy criar-colecionador
+```
 
 ## Pendências conhecidas
 

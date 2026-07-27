@@ -184,17 +184,23 @@ const ADMIN: Ajuda = {
   texto: `
 Área exclusiva do administrador.
 
-## Convites
+## Painel
 
-O cadastro no app é fechado. Para alguém entrar, você gera um convite e manda o link.
+Mostra os números gerais: quantos colecionadores, quantas contas ativas, quantos nunca acessaram, e o total de coleções, itens e repetidas no sistema.
 
-Cada código serve para uma pessoa só e vale por 30 dias. Você pode travar o convite num e-mail específico, e aí só aquele e-mail consegue usar.
+## Criar uma conta
 
-Depois de usado, o convite migra sozinho para a lista de usados.
+Só você cria contas. Clique em **Novo colecionador**, informe nome e e-mail, e o app gera uma senha provisória.
 
-## Usuários
+Ao terminar, aparece o texto pronto com os dados de acesso, com botões para mandar no WhatsApp ou copiar. **A senha não aparece de novo**, então mande antes de fechar.
 
-Mostra todo mundo que já entrou, com data de cadastro. Você pode desativar uma conta e reativar depois. Desativar não apaga nada.
+No primeiro acesso, a pessoa informa a data de nascimento e aceita os termos.
+
+## Gerenciar contas
+
+A lista mostra todo mundo, com data de criação. Quem ainda não entrou aparece marcado como **nunca acessou**.
+
+Você pode desativar uma conta e reativar depois. Desativar não apaga nada.
 `,
 };
 
@@ -207,9 +213,9 @@ Use o e-mail e a senha do cadastro. Esqueceu a senha? Clique em **Esqueci minha 
 
 ## Ainda não tenho conta
 
-O cadastro é feito por convite. Você precisa de um código, que vem no link enviado por quem te indicou. Ao abrir o link, o código já entra preenchido.
+As contas são criadas pelo administrador. Se você ainda não tem acesso, fale com quem te indicou e peça seu e-mail e senha.
 
-Além do código, o cadastro pede sua data de nascimento (é preciso ter 18 anos ou mais) e o aceite dos termos de uso.
+No primeiro acesso o app pede sua data de nascimento (é preciso ter 18 anos ou mais) e o aceite dos termos de uso.
 
 ## Instalar no celular
 

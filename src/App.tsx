@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './lib/auth';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
+import { PrimeiroAcesso } from './pages/PrimeiroAcesso';
 import { Inicio } from './pages/Inicio';
 import { Perfil } from './pages/Perfil';
 import { Admin } from './pages/admin/Admin';
@@ -29,7 +30,7 @@ export default function App() {
 
 /** Item 4.5 do plano: sem login -> /login; super admin -> /admin; colecionador -> /inicio */
 function Rotas() {
-  const { session, carregando } = useAuth();
+  const { session, perfil, carregando } = useAuth();
 
   if (carregando) return <Carregando />;
 
@@ -41,6 +42,9 @@ function Rotas() {
       </Routes>
     );
   }
+
+  // Conta criada pelo admin: falta a pessoa informar nascimento e aceitar termos
+  if (perfil && !perfil.primeiro_acesso_em) return <PrimeiroAcesso />;
 
   return (
     <Layout>

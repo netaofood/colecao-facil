@@ -22,20 +22,16 @@ export interface Perfil {
   foto_url: string | null;
   papel: Papel;
   ativo: boolean;
-  perfil_publico: boolean;
   nascimento: string | null;
   termos_aceitos_em: string | null;
   termos_versao: string | null;
+  primeiro_acesso_em: string | null;
 }
 
-export interface DadosCadastro {
+export interface NovaConta {
   nome: string;
   email: string;
   senha: string;
-  convite: string;
-  /** ISO: aaaa-mm-dd */
-  nascimento: string;
-  termosVersao: string;
 }
 
 interface AuthContextValue {
@@ -44,8 +40,8 @@ interface AuthContextValue {
   carregando: boolean;
   ehSuperAdmin: boolean;
   entrar: (email: string, senha: string) => Promise<void>;
-  cadastrar: (dados: DadosCadastro) => Promise<void>;
-  validarConvite: (codigo: string) => Promise<boolean>;
+  criarColecionador: (dados: NovaConta) => Promise<void>;
+  completarPrimeiroAcesso: (nascimento: string, termosVersao: string) => Promise<void>;
   recuperarSenha: (email: string) => Promise<void>;
   sair: () => Promise<void>;
   recarregarPerfil: () => Promise<void>;
@@ -116,29 +112,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw new Error(traduzErro(error.message));
     },
 
-    async cadastrar(dados) {
-      const { error } = await supabase.auth.signUp({
-        email: dados.email.trim().toLowerCase(),
-        password: dados.senha,
-        options: {
-          data: {
+    async criarColecionador(dados) {
+      // A conta é criada por uma Edge Function, que guarda a chave
+      // service_role no servidor. O navegador nunca vê essa chave.
+      const { data: sessao } = await supabase.auth.getSession();
+      const token = sessao.session?.access_token;
+      if (!token) throw new Error('Sessão expirada. Entre novamente.');
+
+      const { data, error } = await supabase.functions.invoke(
+        'criar-colecionador',
+        {
+          body: {
             nome: dados.nome.trim(),
-            convite: dados.convite.trim().toUpperCase(),
-            nascimento: dados.nascimento,
-            termos_aceitos: 'true',
-            termos_versao: dados.termosVersao,
+            email: dados.email.trim().toLowerCase(),
+            senha: dados.senha,
           },
-        },
-      });
-      if (error) throw new Error(traduzErro(error.message));
+        }
+      );
+
+      if (error) {
+        // A função devolve a mensagem em português no corpo da resposta
+        let detalhe = '';
+        try {
+          const corpo = await (error as { context?: Response }).context?.json();
+          detalhe = corpo?.erro ?? '';
+        } catch {
+          detalhe = '';
+        }
+        throw new Error(
+          detalhe ||
+            'Não consegui criar a conta. Confira se a função criar-colecionador foi publicada.'
+        );
+      }
+
+      if (data && typeof data === 'object' && 'erro' in data) {
+        throw new Error(String((data as { erro: string }).erro));
+      }
     },
 
-    async validarConvite(codigo) {
-      const { data, error } = await supabase.rpc('convite_valido', {
-        p_codigo: codigo.trim().toUpperCase(),
-      });
+    async completarPrimeiroAcesso(nascimento, termosVersao) {
+      if (!session?.user) throw new Error('Sessão expirada.');
+
+      const { error } = await supabase
+        .from('usuarios')
+        .update({
+          nascimento,
+          termos_aceitos_em: new Date().toISOString(),
+          termos_versao: termosVersao,
+          primeiro_acesso_em: new Date().toISOString(),
+        })
+        .eq('id', session.user.id);
+
       if (error) throw new Error(traduzErro(error.message));
-      return data === true;
+      await buscarPerfil(session.user.id);
     },
 
     async recuperarSenha(email) {
@@ -185,9 +211,6 @@ function traduzErro(msg: string): string {
 
   // Erros levantados pelo trigger handle_new_user (migration 0002)
   const doBanco: [string, string][] = [
-    ['CONVITE_OBRIGATORIO', 'O cadastro é feito por convite. Peça um código a quem te indicou.'],
-    ['CONVITE_INVALIDO', 'Convite inexistente, já usado ou vencido.'],
-    ['CONVITE_OUTRO_EMAIL', 'Este convite foi enviado para outro e-mail.'],
     ['NASCIMENTO_OBRIGATORIO', 'Informe sua data de nascimento.'],
     ['IDADE_MINIMA', 'É necessário ter 18 anos ou mais para se cadastrar.'],
     ['TERMOS_NAO_ACEITOS', 'É preciso aceitar os termos de uso.'],
