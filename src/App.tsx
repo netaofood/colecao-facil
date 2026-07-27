@@ -5,10 +5,13 @@ import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Inicio } from './pages/Inicio';
 import { Perfil } from './pages/Perfil';
-import { EmBreve } from './pages/EmBreve';
-import { Convites } from './pages/admin/Convites';
+import { Admin } from './pages/admin/Admin';
 import { Colecoes } from './pages/Colecoes';
 import { ColecaoDetalhe } from './pages/ColecaoDetalhe';
+import { MinhaColecao } from './pages/MinhaColecao';
+import { Trocas } from './pages/Trocas';
+import { Descobrir } from './pages/Descobrir';
+import { Relatorios } from './pages/Relatorios';
 import { T } from './theme';
 
 export default function App() {
@@ -41,17 +44,13 @@ function Rotas() {
       <Routes>
         <Route path="/inicio" element={<Inicio />} />
         <Route path="/perfil" element={<Perfil />} />
+        <Route path="/relatorios" element={<Relatorios />} />
         <Route path="/colecoes" element={<Colecoes />} />
-        <Route path="/colecoes/:id" element={<ColecaoDetalhe />} />
-        <Route
-          path="/trocas"
-          element={<EmBreve titulo="Trocas" fase="Fase 6" itens="item 9 do plano" />}
-        />
-        <Route
-          path="/descobrir"
-          element={<EmBreve titulo="Descobrir" fase="Fase 5" itens="item 10 do plano" />}
-        />
-        <Route path="/admin" element={<RotaAdmin><Convites /></RotaAdmin>} />
+        <Route path="/colecoes/:id" element={<MinhaColecao />} />
+        <Route path="/colecoes/:id/catalogo" element={<ColecaoDetalhe />} />
+        <Route path="/trocas" element={<Trocas />} />
+        <Route path="/descobrir" element={<Descobrir />} />
+        <Route path="/admin" element={<RotaAdmin><Admin /></RotaAdmin>} />
         <Route path="/login" element={<Navigate to="/inicio" replace />} />
         <Route path="*" element={<Navigate to="/inicio" replace />} />
       </Routes>

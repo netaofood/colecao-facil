@@ -1,5 +1,12 @@
 import { supabase } from './supabase';
-import type { Colecao, Item, Subdivisao, ColecaoComProgresso } from './tipos';
+import type {
+  Colecao,
+  Item,
+  Subdivisao,
+  ColecaoComProgresso,
+  ItemUsuario,
+  StatusItem,
+} from './tipos';
 
 /* ---------------------------------------------------------------- */
 /* COLEÇÕES                                                          */
@@ -327,4 +334,238 @@ export async function apagarTodosItens(colecaoId: string): Promise<void> {
     .delete()
     .eq('colecao_id', colecaoId);
   if (error) throw new Error(error.message);
+}
+
+/* ---------------------------------------------------------------- */
+/* MEU PROGRESSO — tenho / falta / repetida                          */
+/* ---------------------------------------------------------------- */
+
+
+/** Marcações do usuário nos itens de uma coleção, indexadas por item_id. */
+export async function listarMeusItens(
+  usuarioId: string,
+  itemIds: string[]
+): Promise<Map<string, ItemUsuario>> {
+  const mapa = new Map<string, ItemUsuario>();
+  if (itemIds.length === 0) return mapa;
+
+  // O filtro .in tem limite de tamanho na URL: quebra em blocos
+  const BLOCO = 300;
+  for (let i = 0; i < itemIds.length; i += BLOCO) {
+    const { data, error } = await supabase
+      .from('itens_usuario')
+      .select('*')
+      .eq('usuario_id', usuarioId)
+      .in('item_id', itemIds.slice(i, i + BLOCO));
+
+    if (error) throw new Error(error.message);
+    for (const linha of (data ?? []) as ItemUsuario[]) {
+      mapa.set(linha.item_id, linha);
+    }
+  }
+  return mapa;
+}
+
+/**
+ * Define o status de um item. A restrição do banco exige que
+ * quantidade_repetida seja 0 fora do status 'repetida'.
+ */
+export async function marcarItem(
+  usuarioId: string,
+  itemId: string,
+  status: StatusItem,
+  quantidadeRepetida = 0
+): Promise<void> {
+  const qtd = status === 'repetida' ? Math.max(1, quantidadeRepetida) : 0;
+
+  const { error } = await supabase.from('itens_usuario').upsert(
+    {
+      usuario_id: usuarioId,
+      item_id: itemId,
+      status,
+      quantidade_repetida: qtd,
+    },
+    { onConflict: 'usuario_id,item_id' }
+  );
+
+  if (error) throw new Error(error.message);
+}
+
+/** Marcação em lote (item 8.6). */
+export async function marcarVarios(
+  usuarioId: string,
+  itemIds: string[],
+  status: StatusItem
+): Promise<void> {
+  if (itemIds.length === 0) return;
+  const qtd = status === 'repetida' ? 1 : 0;
+
+  const linhas = itemIds.map((item_id) => ({
+    usuario_id: usuarioId,
+    item_id,
+    status,
+    quantidade_repetida: qtd,
+  }));
+
+  const BLOCO = 500;
+  for (let i = 0; i < linhas.length; i += BLOCO) {
+    const { error } = await supabase
+      .from('itens_usuario')
+      .upsert(linhas.slice(i, i + BLOCO), { onConflict: 'usuario_id,item_id' });
+    if (error) throw new Error(error.message);
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* PERFIS PÚBLICOS E DESCOBERTA (itens 10 e 9)                       */
+/* ---------------------------------------------------------------- */
+
+export interface PerfilPublico {
+  id: string;
+  apelido: string;
+  nome: string | null;
+  cidade: string | null;
+  estado: string | null;
+  foto_url: string | null;
+  whatsapp: string | null;
+  created_at: string;
+}
+
+export async function buscarPerfilPublico(
+  apelido: string
+): Promise<PerfilPublico | null> {
+  const { data, error } = await supabase
+    .from('perfis_publicos')
+    .select('*')
+    .eq('apelido', apelido.toLowerCase())
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data as PerfilPublico | null;
+}
+
+export async function listarPerfisPublicos(
+  termo = ''
+): Promise<PerfilPublico[]> {
+  let q = supabase.from('perfis_publicos').select('*').limit(60);
+
+  if (termo.trim()) {
+    const t = `%${termo.trim()}%`;
+    q = q.or(`apelido.ilike.${t},nome.ilike.${t},cidade.ilike.${t}`);
+  }
+
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PerfilPublico[];
+}
+
+export interface Match {
+  perfil: PerfilPublico;
+  /** Itens que ele tem repetido e eu não tenho */
+  eleTem: Item[];
+  /** Itens que eu tenho repetido e ele não tem */
+  euTenho: Item[];
+}
+
+/**
+ * Item 9.1 — cruza minhas repetidas com as dos outros.
+ * Só enxerga quem ligou o perfil público (a RLS garante isso).
+ */
+export async function buscarMatches(
+  usuarioId: string,
+  colecaoId: string
+): Promise<Match[]> {
+  const itens = await listarItens(colecaoId);
+  if (itens.length === 0) return [];
+
+  const porId = new Map(itens.map((i) => [i.id, i]));
+  const idsItens = itens.map((i) => i.id);
+
+  const meus = await listarMeusItens(usuarioId, idsItens);
+
+  const minhasRepetidas = new Set<string>();
+  const tenhoAlgum = new Set<string>();
+  for (const [itemId, linha] of meus) {
+    if (linha.status !== 'falta') tenhoAlgum.add(itemId);
+    if (linha.status === 'repetida') minhasRepetidas.add(itemId);
+  }
+  const meusFaltantes = idsItens.filter((id) => !tenhoAlgum.has(id));
+
+  // Repetidas dos outros nesta coleção
+  const repetidasAlheias = new Map<string, Set<string>>();
+  const BLOCO = 300;
+  for (let i = 0; i < idsItens.length; i += BLOCO) {
+    const { data, error } = await supabase
+      .from('itens_usuario')
+      .select('usuario_id, item_id')
+      .eq('status', 'repetida')
+      .neq('usuario_id', usuarioId)
+      .in('item_id', idsItens.slice(i, i + BLOCO));
+
+    if (error) throw new Error(error.message);
+    for (const l of (data ?? []) as { usuario_id: string; item_id: string }[]) {
+      if (!repetidasAlheias.has(l.usuario_id)) {
+        repetidasAlheias.set(l.usuario_id, new Set());
+      }
+      repetidasAlheias.get(l.usuario_id)!.add(l.item_id);
+    }
+  }
+
+  if (repetidasAlheias.size === 0) return [];
+
+  // O que cada um já tem (para saber o que falta a ele)
+  const temAlgum = new Map<string, Set<string>>();
+  const outrosIds = [...repetidasAlheias.keys()];
+  for (let i = 0; i < idsItens.length; i += BLOCO) {
+    const { data, error } = await supabase
+      .from('itens_usuario')
+      .select('usuario_id, item_id, status')
+      .in('usuario_id', outrosIds)
+      .in('item_id', idsItens.slice(i, i + BLOCO));
+
+    if (error) throw new Error(error.message);
+    for (const l of (data ?? []) as {
+      usuario_id: string;
+      item_id: string;
+      status: string;
+    }[]) {
+      if (l.status === 'falta') continue;
+      if (!temAlgum.has(l.usuario_id)) temAlgum.set(l.usuario_id, new Set());
+      temAlgum.get(l.usuario_id)!.add(l.item_id);
+    }
+  }
+
+  const { data: perfis, error: erroPerfis } = await supabase
+    .from('perfis_publicos')
+    .select('*')
+    .in('id', outrosIds);
+
+  if (erroPerfis) throw new Error(erroPerfis.message);
+
+  const matches: Match[] = [];
+  for (const perfil of (perfis ?? []) as PerfilPublico[]) {
+    const dele = repetidasAlheias.get(perfil.id) ?? new Set();
+    const jaTem = temAlgum.get(perfil.id) ?? new Set();
+
+    const eleTem = meusFaltantes
+      .filter((id) => dele.has(id))
+      .map((id) => porId.get(id)!)
+      .filter(Boolean);
+
+    const euTenho = [...minhasRepetidas]
+      .filter((id) => !jaTem.has(id))
+      .map((id) => porId.get(id)!)
+      .filter(Boolean);
+
+    if (eleTem.length > 0 || euTenho.length > 0) {
+      matches.push({ perfil, eleTem, euTenho });
+    }
+  }
+
+  // Quem fecha troca dos dois lados aparece primeiro
+  return matches.sort((a, b) => {
+    const pesoA = Math.min(a.eleTem.length, a.euTenho.length) * 100 + a.eleTem.length;
+    const pesoB = Math.min(b.eleTem.length, b.euTenho.length) * 100 + b.eleTem.length;
+    return pesoB - pesoA;
+  });
 }

@@ -1,4 +1,4 @@
-import { Library, Repeat, Search } from 'lucide-react';
+import { Library, Repeat, Search, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
@@ -40,6 +40,7 @@ export function Inicio() {
         <Atalho para="/colecoes" Icone={Library} titulo="Minhas coleções" texto="Criar, adotar e acompanhar o progresso." />
         <Atalho para="/trocas" Icone={Repeat} titulo="Trocas" texto="Achar quem tem o que te falta." />
         <Atalho para="/descobrir" Icone={Search} titulo="Descobrir" texto="Coleções oficiais e outros colecionadores." />
+        <Atalho para="/relatorios" Icone={BarChart3} titulo="Relatórios" texto="Seu progresso e exportação em CSV." />
       </div>
     </div>
   );

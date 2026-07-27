@@ -81,12 +81,26 @@ Nada de tela duplicada.
 | 2. Layout responsivo | ✅ |
 | 3. Botões WhatsApp e copiar link | ✅ |
 | 4. Perfis de acesso | ✅ |
-| 5. Autenticação e perfil | ✅ |
-| 6. Coleções | ⬜ Fase 3 |
-| 7. Catálogo de itens | ⬜ Fase 3 |
-| 8. Minha coleção (tenho/falta/repetida) | ⬜ Fase 4 |
-| 9. Trocas | ⬜ Fase 6 |
-| 10. Perfil público e descoberta | ⬜ Fase 5 |
-| 11. Painel Super Admin | ⬜ Fase 5 |
-| 12. Relatórios | ⬜ Fase 6 |
+| 5. Autenticação, perfil e convites | ✅ |
+| 6. Coleções | ✅ |
+| 7. Catálogo de itens | ✅ |
+| 8. Minha coleção (tenho/falta/repetida) | ✅ |
+| 9. Trocas | ✅ |
+| 10. Perfil público e descoberta | ✅ |
+| 11. Painel Super Admin | ✅ |
+| 12. Relatórios | ✅ |
 | 13. Infra | ✅ |
+
+## Migrations
+
+Rodar em ordem no SQL Editor do Supabase:
+
+- `0000_reset.sql` — derruba tudo. Só para recriar do zero.
+- `0001_init.sql` — schema completo.
+- `0002_convites_termos_privacidade.sql` — convites, idade mínima, termos, perfil público.
+
+## Pendências conhecidas
+
+- Termos de uso em `src/lib/termos.ts` são **rascunho** e precisam de revisão jurídica.
+- Upload de foto por item ainda não tem interface (o campo `foto_url` existe e a grade já exibe).
+- Domínio `colecao.netao.app.br` a apontar na Vercel.

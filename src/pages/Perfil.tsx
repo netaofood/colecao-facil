@@ -15,6 +15,7 @@ export function Perfil() {
   const [estado, setEstado] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [whatsappPublico, setWhatsappPublico] = useState(false);
+  const [perfilPublico, setPerfilPublico] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -27,6 +28,7 @@ export function Perfil() {
     setEstado(perfil.estado ?? '');
     setWhatsapp(perfil.whatsapp ?? '');
     setWhatsappPublico(perfil.whatsapp_publico);
+    setPerfilPublico(perfil.perfil_publico);
   }, [perfil]);
 
   if (!perfil) return null;
@@ -59,6 +61,7 @@ export function Perfil() {
         estado: estado.trim().toUpperCase() || null,
         whatsapp: whatsapp.replace(/\D/g, '') || null,
         whatsapp_publico: whatsappPublico,
+        perfil_publico: perfilPublico,
       })
       .eq('id', perfil!.id);
 
@@ -151,6 +154,43 @@ export function Perfil() {
             style={TS.input}
           />
         </Campo>
+
+        {/* Item 11 — o colecionador decide se aparece nas buscas */}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '12px 14px',
+            background: perfilPublico ? T.neonFaint : T.bgElevated,
+            border: `1px solid ${perfilPublico ? T.neonBorder : T.border}`,
+            borderRadius: T.radiusSm,
+            marginBottom: 12,
+            cursor: 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={perfilPublico}
+            onChange={(e) => setPerfilPublico(e.target.checked)}
+            style={{ marginTop: 2, accentColor: T.neon, width: 16, height: 16 }}
+          />
+          <span
+            style={{
+              fontFamily: T.fontBody,
+              fontSize: 13,
+              color: T.textSecondary,
+              lineHeight: 1.5,
+            }}
+          >
+            Aparecer nas buscas e nas trocas.
+            <br />
+            <span style={{ color: T.textMuted, fontSize: 12 }}>
+              Desligado, ninguém te encontra e você não aparece como opção de troca.
+              Seu e-mail nunca é mostrado.
+            </span>
+          </span>
+        </label>
 
         {/* Item 5.4 — privacidade do WhatsApp, oculto por padrão */}
         <label

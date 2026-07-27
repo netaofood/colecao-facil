@@ -6,6 +6,7 @@ import {
   Repeat,
   Search,
   User,
+  BarChart3,
   Shield,
   LogOut,
   PanelLeftClose,
@@ -29,6 +30,7 @@ const DESTINOS: Destino[] = [
   { para: '/colecoes', rotulo: 'Coleções', Icone: Library, noMobile: true },
   { para: '/trocas', rotulo: 'Trocas', Icone: Repeat, noMobile: true },
   { para: '/descobrir', rotulo: 'Descobrir', Icone: Search, noMobile: true },
+  { para: '/relatorios', rotulo: 'Relatórios', Icone: BarChart3, noMobile: false },
   { para: '/perfil', rotulo: 'Perfil', Icone: User, noMobile: true },
   { para: '/admin', rotulo: 'Admin', Icone: Shield, noMobile: false, soAdmin: true },
 ];

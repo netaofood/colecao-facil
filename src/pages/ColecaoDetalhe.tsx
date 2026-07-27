@@ -82,7 +82,7 @@ export function ColecaoDetalhe() {
   return (
     <div>
       <Link
-        to="/colecoes"
+        to={`/colecoes/${id}`}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -95,7 +95,7 @@ export function ColecaoDetalhe() {
         }}
       >
         <ArrowLeft size={16} />
-        Coleções
+        Voltar para a coleção
       </Link>
 
       {/* Cabeçalho */}

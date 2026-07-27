@@ -70,7 +70,6 @@ export function Convites() {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h1 style={{ ...TS.titulo, fontSize: 22, marginBottom: 4 }}>Convites</h1>
       <p
         style={{
           fontFamily: T.fontBody,
