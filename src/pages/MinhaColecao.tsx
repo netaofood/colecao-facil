@@ -32,7 +32,7 @@ import { BarraProgresso } from '../components/BarraProgresso';
 import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
-import { descricaoItem, rotuloCurto, tamanhoDaFonte } from '../lib/rotulos';
+import { descricaoItem, rotulosDaLista, tamanhoDaFonte } from '../lib/rotulos';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
 import { usePodeCadastrar } from '../components/AvisoAssinatura';
@@ -587,6 +587,8 @@ function Grade({
   selecao: Set<string>;
   aoClicarItem: (item: Item) => void;
 }) {
+  const rotulos = rotulosDaLista(itens, nomeSubdivisao);
+
   return (
     <div
       style={{
@@ -600,7 +602,7 @@ function Grade({
           key={item.id}
           item={item}
           linha={meus.get(item.id)}
-          rotulo={rotuloCurto(item, nomeSubdivisao)}
+          rotulo={rotulos.get(item.id) ?? item.numero ?? item.nome}
           selecionavel={selecao.size > 0}
           selecionado={selecao.has(item.id)}
           aoClicar={() => aoClicarItem(item)}

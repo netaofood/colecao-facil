@@ -77,18 +77,57 @@ export function rotuloCurto(
   if (chave.length < 3) return base;
 
   const alvo = semAcento(base);
+  const posicao = alvo.indexOf(chave);
+  if (posicao === -1) return base;
 
-  // Só corta no começo ou no fim. Cortar no meio destrói o sentido:
-  // "26OURO1" viraria "261", que não diz nada.
-  let curto: string | null = null;
-  if (alvo.startsWith(chave)) {
-    curto = base.slice(chave.length).trim();
-  } else if (alvo.endsWith(chave)) {
-    curto = base.slice(0, base.length - chave.length).trim();
-  }
+  const antes = base.slice(0, posicao);
+  const depois = base.slice(posicao + chave.length);
 
-  if (!curto || curto.length < 1) return base;
-  return curto;
+  // Cortar no meio só faz sentido quando o que vem antes tem letras.
+  // "MESSI|OURO|1" vira "MESSI1"; já "26|OURO|1" viraria "261",
+  // que não diz nada — nesse caso, deixa o código inteiro.
+  const temLetras = /[A-Za-zÀ-ÿ]/.test(antes);
+  if (posicao > 0 && depois.length > 0 && !temLetras) return base;
+
+  const curto = `${antes}${depois}`.trim();
+  return curto.length >= 1 ? curto : base;
+}
+
+/** Tira a numeração do fim, quando o que sobra ainda é um nome. */
+export function semNumeroFinal(rotulo: string): string {
+  const cortado = rotulo.replace(/\s*\d+$/, '').trim();
+  if (!cortado) return rotulo;
+  if (!/[A-Za-zÀ-ÿ]/.test(cortado)) return rotulo;
+  return cortado;
+}
+
+/**
+ * Monta os rótulos de uma lista inteira.
+ *
+ * A numeração do fim só é removida se, depois disso, os rótulos
+ * continuarem distinguíveis entre si. Com "MESSIOURO1" e "MESSIOURO2"
+ * no mesmo bloco, o número precisa ficar.
+ */
+export function rotulosDaLista(
+  itens: Item[],
+  nomeSubdivisao?: string | null
+): Map<string, string> {
+  const curtos = itens.map((i) => ({
+    id: i.id,
+    texto: rotuloCurto(i, nomeSubdivisao),
+  }));
+
+  const semNumero = curtos.map((c) => ({
+    id: c.id,
+    texto: semNumeroFinal(c.texto),
+  }));
+
+  const unicos = new Set(semNumero.map((c) => c.texto.toUpperCase()));
+  const podeTirar = unicos.size === semNumero.length;
+
+  return new Map(
+    (podeTirar ? semNumero : curtos).map((c) => [c.id, c.texto])
+  );
 }
 
 /** Fonte menor conforme o rótulo cresce, para caber sem cortar. */

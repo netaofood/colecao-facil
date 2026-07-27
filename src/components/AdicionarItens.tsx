@@ -196,10 +196,11 @@ function PorSerie({
   const [raridade, setRaridade] = useState('');
   const [categoria, setCategoria] = useState('');
   const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
+  const [semNumeracao, setSemNumeracao] = useState(false);
 
   const inicio = Number(de) || 0;
   const fim = Number(ate) || 0;
-  const porSubdivisao = fim >= inicio ? fim - inicio + 1 : 0;
+  const porSubdivisao = semNumeracao ? 1 : fim >= inicio ? fim - inicio + 1 : 0;
   const largura = String(fim).length;
 
   const escolhidas = subdivisoes.filter((s) => marcadas.has(s.id));
@@ -211,8 +212,9 @@ function PorSerie({
 
   /** prefixo + NOME DA SUBDIVISÃO + número */
   function formatar(n: number, sub: Subdivisao | null) {
-    const num = zeros ? String(n).padStart(largura, '0') : String(n);
     const meio = sub ? codigoDaSubdivisao(sub.nome) : '';
+    if (semNumeracao) return `${prefixo}${meio}`;
+    const num = zeros ? String(n).padStart(largura, '0') : String(n);
     return `${prefixo}${meio}${num}`;
   }
 
@@ -220,17 +222,24 @@ function PorSerie({
 
   function gerar(): NovoItem[] {
     const lista: NovoItem[] = [];
+    const de = semNumeracao ? 1 : inicio;
+    const ate = semNumeracao ? 1 : fim;
+
     for (const sub of levas) {
-      for (let n = inicio; n <= fim; n++) {
+      for (let n = de; n <= ate; n++) {
         const codigo = formatar(n, sub);
         const numeroLegivel = zeros
           ? String(n).padStart(largura, '0')
           : String(n);
+        // Nome legível. Sem numeração, usa só o prefixo: "Messi".
+        const nomeItem = semNumeracao
+          ? prefixo.trim() || codigo
+          : sub
+            ? `${sub.nome} ${numeroLegivel}`
+            : codigo;
         lista.push({
           numero: codigo,
-          // Nome legível: "Ouro 1" em vez de repetir "26OURO1".
-          // Sem subdivisão, fica só o número, e a tela não repete.
-          nome: sub ? `${sub.nome} ${numeroLegivel}` : codigo,
+          nome: nomeItem,
           raridade: raridade || null,
           categoria: categoria || null,
           subdivisao_id: sub ? sub.id : null,
@@ -242,7 +251,49 @@ function PorSerie({
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 10,
+          padding: '11px 13px',
+          background: semNumeracao ? T.neonFaint : T.bgElevated,
+          border: `1px solid ${semNumeracao ? T.neonBorder : T.border}`,
+          borderRadius: T.radiusSm,
+          marginBottom: 14,
+          cursor: 'pointer',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={semNumeracao}
+          onChange={(e) => setSemNumeracao(e.target.checked)}
+          style={{ marginTop: 2, accentColor: T.neon, width: 16, height: 16 }}
+        />
+        <span
+          style={{
+            fontFamily: T.fontBody,
+            fontSize: 13,
+            color: T.textSecondary,
+            lineHeight: 1.5,
+          }}
+        >
+          Sem numeração
+          <br />
+          <span style={{ color: T.textMuted, fontSize: 12 }}>
+            Cria um item por subdivisão, usando só o prefixo. Bom para nome de
+            jogador: Messi vira MESSIOURO, MESSIPRATA.
+          </span>
+        </span>
+      </label>
+
+      <div
+        style={{
+          display: semNumeracao ? 'none' : 'flex',
+          gap: 10,
+          marginBottom: 14,
+        }}
+      >
         <div style={{ flex: 1 }}>
           <label style={TS.label} htmlFor="de">
             De
@@ -338,7 +389,7 @@ function PorSerie({
 
       <label
         style={{
-          display: 'flex',
+          display: semNumeracao ? 'none' : 'flex',
           alignItems: 'center',
           gap: 9,
           marginBottom: 16,

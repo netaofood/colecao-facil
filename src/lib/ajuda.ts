@@ -106,6 +106,8 @@ Aqui você cadastra e edita os itens da coleção. É diferente da tela anterior
 
 **Numeração em série** — o mais rápido. Diga de qual número até qual e o app cria todos. Marcando várias subdivisões, ele repete o intervalo em cada uma, montando códigos como 26OURO1, 26PRATA1 e assim por diante.
 
+Marcando **Sem numeração**, ele cria um item por subdivisão usando só o prefixo. Bom para nome de jogador: com o prefixo Messi e as quatro subdivisões marcadas, saem MESSIOURO, MESSIPRATA, MESSIBRONZE e MESSIREGULAR — sem o número no fim.
+
 **Grid** — digite item por item numa tabela. Linhas em branco são ignoradas.
 
 **CSV** — cole direto de uma planilha, na ordem número, nome, categoria, raridade.
