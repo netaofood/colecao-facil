@@ -492,3 +492,157 @@ export async function listarCategoriasDasColecoes(
   if (error) throw new Error(error.message);
   return limparLista((data ?? []).map((l) => (l as { categoria: string | null }).categoria));
 }
+
+/* ---------------------------------------------------------------- */
+/* PAINEL DO SUPER ADMIN                                             */
+/* ---------------------------------------------------------------- */
+
+export interface ResumoColecionador {
+  colecoes: number;
+  itens: number;
+  tenho: number;
+  repetidas: number;
+  ultimaAtividade: string | null;
+}
+
+/** Números de um colecionador específico, para a ficha no painel. */
+export async function resumoDoColecionador(
+  usuarioId: string
+): Promise<ResumoColecionador> {
+  const { data: colecoes, error: erroColecoes } = await supabase
+    .from('colecoes')
+    .select('id')
+    .eq('dono_id', usuarioId);
+
+  if (erroColecoes) throw new Error(erroColecoes.message);
+
+  const ids = (colecoes ?? []).map((c) => (c as { id: string }).id);
+
+  let itens = 0;
+  if (ids.length > 0) {
+    const { count, error } = await supabase
+      .from('itens')
+      .select('*', { count: 'exact', head: true })
+      .in('colecao_id', ids);
+    if (error) throw new Error(error.message);
+    itens = count ?? 0;
+  }
+
+  const { data: marcados, error: erroMarcados } = await supabase
+    .from('itens_usuario')
+    .select('status, updated_at')
+    .eq('usuario_id', usuarioId)
+    .order('updated_at', { ascending: false })
+    .limit(2000);
+
+  if (erroMarcados) throw new Error(erroMarcados.message);
+
+  const linhas = (marcados ?? []) as { status: string; updated_at: string }[];
+
+  return {
+    colecoes: ids.length,
+    itens,
+    tenho: linhas.filter((l) => l.status !== 'falta').length,
+    repetidas: linhas.filter((l) => l.status === 'repetida').length,
+    ultimaAtividade: linhas[0]?.updated_at ?? null,
+  };
+}
+
+/** Envia o e-mail de redefinição de senha para um colecionador. */
+export async function enviarRedefinicaoSenha(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/nova-senha`,
+  });
+  if (error) throw new Error(error.message);
+}
+
+/* ---------------------------------------------------------------- */
+/* ASSINATURA                                                        */
+/* ---------------------------------------------------------------- */
+
+export interface Pagamento {
+  id: string;
+  usuario_id: string;
+  valor: number;
+  meses: number;
+  pago_em: string;
+  vigencia_ate: string;
+  forma: string | null;
+  observacao: string | null;
+  created_at: string;
+}
+
+export const VALOR_PLANO = 29.9;
+
+export type SituacaoAssinatura = 'isento' | 'em_dia' | 'vencendo' | 'vencida';
+
+/**
+ * Conta em dias de calendário, ignorando a hora — é assim que o banco
+ * compara (assinatura_ate >= current_date). Se a tela usasse hora, ela
+ * diria uma coisa e a trava faria outra.
+ */
+export function diasRestantes(assinaturaAte: string | null): number | null {
+  if (!assinaturaAte) return null;
+
+  const [ano, mes, dia] = assinaturaAte.split('-').map(Number);
+  if (!ano || !mes || !dia) return null;
+
+  const fim = new Date(ano, mes - 1, dia);
+  const agora = new Date();
+  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+
+  return Math.round((fim.getTime() - hoje.getTime()) / 86400000);
+}
+
+/** Vencendo = vence hoje ou dentro de sete dias. */
+export function situacaoAssinatura(
+  isento: boolean,
+  assinaturaAte: string | null
+): SituacaoAssinatura {
+  if (isento) return 'isento';
+
+  const dias = diasRestantes(assinaturaAte);
+  if (dias === null) return 'vencida';
+  if (dias < 0) return 'vencida';
+  if (dias <= 7) return 'vencendo';
+  return 'em_dia';
+}
+
+export async function registrarPagamento(dados: {
+  usuarioId: string;
+  meses: number;
+  valor: number;
+  forma?: string | null;
+  observacao?: string | null;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('registrar_pagamento', {
+    p_usuario_id: dados.usuarioId,
+    p_meses: dados.meses,
+    p_valor: dados.valor,
+    p_forma: dados.forma ?? null,
+    p_observacao: dados.observacao ?? null,
+  });
+
+  if (error) throw new Error(error.message);
+  return data as string;
+}
+
+export async function listarPagamentos(
+  usuarioId?: string
+): Promise<Pagamento[]> {
+  let q = supabase
+    .from('pagamentos')
+    .select('*')
+    .order('pago_em', { ascending: false })
+    .limit(200);
+
+  if (usuarioId) q = q.eq('usuario_id', usuarioId);
+
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Pagamento[];
+}
+
+export function moeda(v: number): string {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}

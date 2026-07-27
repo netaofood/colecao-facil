@@ -9,6 +9,7 @@ import {
   listarCategoriasDasColecoes,
 } from '../lib/api';
 import { InputCategoria } from '../components/InputCategoria';
+import { usePodeCadastrar } from '../components/AvisoAssinatura';
 import type { ColecaoComProgresso } from '../lib/tipos';
 import { BarraProgresso } from '../components/BarraProgresso';
 
@@ -21,6 +22,7 @@ export function Colecoes() {
   const [erro, setErro] = useState<string | null>(null);
   const [modal, setModal] = useState<'branco' | null>(null);
   const [categorias, setCategorias] = useState<string[]>([]);
+  const podeCadastrar = usePodeCadastrar();
 
   useEffect(() => {
     if (!perfil) return;
@@ -76,8 +78,13 @@ export function Colecoes() {
         <PortaEntrada
           Icone={Plus}
           titulo="Nova coleção"
-          texto="Cadastre os itens do seu jeito."
-          aoClicar={() => setModal('branco')}
+          texto={
+            podeCadastrar
+              ? 'Cadastre os itens do seu jeito.'
+              : 'Indisponível: assinatura vencida.'
+          }
+          aoClicar={() => podeCadastrar && setModal('branco')}
+          desabilitada={!podeCadastrar}
         />
       </div>
 
@@ -141,12 +148,14 @@ function PortaEntrada({
   texto,
   aoClicar,
   destaque = false,
+  desabilitada = false,
 }: {
   Icone: typeof Plus;
   titulo: string;
   texto: string;
   aoClicar: () => void;
   destaque?: boolean;
+  desabilitada?: boolean;
 }) {
   return (
     <button
@@ -155,7 +164,8 @@ function PortaEntrada({
       style={{
         ...TS.card,
         textAlign: 'left',
-        cursor: 'pointer',
+        cursor: desabilitada ? 'not-allowed' : 'pointer',
+        opacity: desabilitada ? 0.5 : 1,
         background: destaque ? T.neonFaint : T.bgCard,
         borderColor: destaque ? T.neonBorder : T.border,
         transition: 'all 0.15s',

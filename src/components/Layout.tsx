@@ -17,6 +17,7 @@ import { useAuth } from '../lib/auth';
 import { BotaoTema } from './BotaoTema';
 import { BotaoAjuda } from './BotaoAjuda';
 import { LogoLinha, Logo } from './Logo';
+import { AvisoAssinatura } from './AvisoAssinatura';
 
 interface Destino {
   para: string;
@@ -246,6 +247,7 @@ function LayoutDesktop({
             boxSizing: 'border-box',
           }}
         >
+          <AvisoAssinatura />
           {children}
         </div>
         <Rodape />
@@ -309,6 +311,7 @@ function LayoutMobile({
           boxSizing: 'border-box',
         }}
       >
+        <AvisoAssinatura />
         {children}
       </main>
 

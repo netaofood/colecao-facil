@@ -196,9 +196,21 @@ Ao terminar, aparece o texto pronto com os dados de acesso, com botões para man
 
 No primeiro acesso, a pessoa informa a data de nascimento e aceita os termos.
 
+## Pagamentos
+
+O plano é único: R$ 29,90 por mês, com controle manual.
+
+Cada pagamento registrado estende a assinatura em um mês, contando a partir do vencimento atual — quem paga adiantado não perde os dias que ainda tem.
+
+Quem vence **continua vendo tudo e marcando o que já possui**, mas não cria coleção nova nem cadastra item. A trava está no banco, não só na tela.
+
+Contas novas começam com 7 dias de cortesia.
+
 ## Gerenciar contas
 
 A lista mostra todo mundo, com data de criação. Quem ainda não entrou aparece marcado como **nunca acessou**.
+
+Clique num colecionador para abrir a ficha dele: quantas coleções e itens tem, quando acessou pela última vez, e o histórico de pagamentos. Dali você também registra pagamento e envia link de nova senha.
 
 Você pode desativar uma conta e reativar depois. Desativar não apaga nada.
 `,

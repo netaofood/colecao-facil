@@ -26,6 +26,8 @@ export interface Perfil {
   termos_aceitos_em: string | null;
   termos_versao: string | null;
   primeiro_acesso_em: string | null;
+  assinatura_ate: string | null;
+  isento: boolean;
 }
 
 export interface NovaConta {

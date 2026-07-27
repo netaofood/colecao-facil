@@ -45,6 +45,17 @@ As migrations ficam em `supabase/`, na ordem:
 
 Rode pelo SQL Editor do painel do Supabase.
 
+### Assinatura
+
+Plano único de R$ 29,90 por mês, com controle manual: o super admin registra
+os pagamentos e cada um estende a assinatura a partir do vencimento atual.
+
+Vencida, a conta **continua vendo tudo e marcando o que já tem**, mas não cria
+coleção nem cadastra item. A trava está na RLS (`assinatura_ativa()`), não só
+na tela — desabilitar o botão no navegador não contorna.
+
+Contas novas nascem com 7 dias de cortesia (ajustável no trigger).
+
 ### Escopo
 
 O app é de organização pessoal. Cada colecionador é dono das próprias
@@ -127,6 +138,7 @@ Rodar em ordem no SQL Editor do Supabase:
 - `0001_init.sql` — schema completo.
 - `0002_convites_termos_privacidade.sql` — idade mínima, termos, perfil público.
 - `0003_cadastro_pelo_admin.sql` — cadastro só pelo super admin, aceite no primeiro acesso.
+- `0004_assinatura.sql` — plano de R$ 29,90/mês, pagamentos e trava de cadastro.
 
 > **Depois do 0003:** desligue o autocadastro em Supabase → Authentication →
 > Sign In / Providers → Email → desmarcar "Allow new users to sign up".

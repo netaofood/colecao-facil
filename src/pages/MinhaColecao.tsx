@@ -34,6 +34,7 @@ import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
 import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
+import { usePodeCadastrar } from '../components/AvisoAssinatura';
 import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 
 type Filtro = 'todos' | 'falta' | 'tenho' | 'repetida';
@@ -60,6 +61,7 @@ export function MinhaColecao() {
   const [aberto, setAberto] = useState<Item | null>(null);
   const [conferencia, setConferencia] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
+  const podeCadastrar = usePodeCadastrar();
   const [resumo, setResumo] = useState<string | null>(null);
   const [selecao, setSelecao] = useState<Set<string>>(new Set());
 
@@ -266,13 +268,17 @@ export function MinhaColecao() {
       >
         <button
           type="button"
-          onClick={() => setAdicionando(true)}
+          onClick={() => podeCadastrar && setAdicionando(true)}
+          disabled={!podeCadastrar}
+          title={podeCadastrar ? undefined : 'Assinatura vencida'}
           style={{
             ...TS.botaoPrimario,
             display: 'flex',
             alignItems: 'center',
             gap: 7,
             padding: '10px 16px',
+            opacity: podeCadastrar ? 1 : 0.45,
+            cursor: podeCadastrar ? 'pointer' : 'not-allowed',
           }}
         >
           <Plus size={16} />
