@@ -131,17 +131,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
 
       if (error) {
-        // A função devolve a mensagem em português no corpo da resposta
         let detalhe = '';
-        try {
-          const corpo = await (error as { context?: Response }).context?.json();
-          detalhe = corpo?.erro ?? '';
-        } catch {
-          detalhe = '';
+        const resposta = (error as { context?: Response }).context;
+        if (resposta) {
+          try {
+            const corpo = await resposta.clone().json();
+            detalhe = corpo?.erro ?? corpo?.message ?? '';
+          } catch {
+            try {
+              detalhe = (await resposta.clone().text()).slice(0, 300);
+            } catch {
+              detalhe = '';
+            }
+          }
+          if (!detalhe) detalhe = `A função respondeu ${resposta.status}.`;
         }
         throw new Error(
-          detalhe ||
-            'Não consegui criar a conta. Confira se a função criar-colecionador foi publicada.'
+          detalhe || error.message || 'Não consegui falar com a função criar-colecionador.'
         );
       }
 
