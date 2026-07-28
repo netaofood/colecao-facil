@@ -99,9 +99,11 @@ Se a coleção tiver subdivisões, cada uma vira uma caixa com o próprio progre
 
 O lápis ao lado do nome abre a renomeação rápida. Para mudar também categoria, ano e descrição, use o lápis dentro de **Editar catálogo**.
 
-## Foto do item
+## Foto e subdivisão do item
 
 Toque no item e envie a foto ali mesmo. Já tendo foto, aparece o botão **Trocar foto** sobre a imagem.
+
+No fim do card também dá para mover o item de subdivisão. A mudança vale na hora, e o item pula para o bloco certo.
 
 Não precisa ir até o catálogo para isso.
 
@@ -144,7 +146,7 @@ Se você cadastrou os itens antes de criar as subdivisões, eles ficam soltos. O
 
 ## Editar um item
 
-Passe o mouse sobre o item e clique no lápis. Ali você muda número, nome, categoria, raridade e adiciona a foto.
+Passe o mouse sobre o item e clique no lápis. Ali você muda número, nome, categoria, raridade, subdivisão e a foto.
 `,
 };
 

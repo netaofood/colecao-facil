@@ -600,6 +600,16 @@ export function MinhaColecao() {
           item={aberto}
           linha={meus.get(aberto.id)}
           podeEditarFoto={perfil?.id === colecao.dono_id && podeCadastrar}
+          subdivisoes={subdivisoes}
+          aoTrocarSubdivisao={async (subId) => {
+            await atualizarItem(aberto.id, { subdivisao_id: subId });
+            setItens((lista) =>
+              lista.map((i) =>
+                i.id === aberto.id ? { ...i, subdivisao_id: subId } : i
+              )
+            );
+            setAberto((a) => (a ? { ...a, subdivisao_id: subId } : a));
+          }}
           aoFechar={() => setAberto(null)}
           aoAlterar={(status, qtd) => void alterar(aberto, status, qtd)}
           aoTrocarFoto={async (url) => {
@@ -893,13 +903,17 @@ function ModalItem({
   item,
   linha,
   podeEditarFoto,
+  subdivisoes,
   aoFechar,
   aoAlterar,
   aoTrocarFoto,
+  aoTrocarSubdivisao,
 }: {
   item: Item;
   linha?: ItemUsuario;
   podeEditarFoto: boolean;
+  subdivisoes: Subdivisao[];
+  aoTrocarSubdivisao: (subdivisaoId: string | null) => Promise<void>;
   aoFechar: () => void;
   aoAlterar: (status: StatusItem, quantidade?: number) => void;
   aoTrocarFoto: (url: string | null) => Promise<void>;
@@ -1115,6 +1129,30 @@ function ModalItem({
                   aoClicar={() => aoAlterar('repetida', qtd + 1)}
                 />
               </div>
+            </div>
+          )}
+
+          {/* Mover o item de subdivisão sem sair da tela */}
+          {podeEditarFoto && subdivisoes.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <label style={TS.label} htmlFor="item-sub">
+                Subdivisão
+              </label>
+              <select
+                id="item-sub"
+                value={item.subdivisao_id ?? ''}
+                onChange={(e) =>
+                  void aoTrocarSubdivisao(e.target.value || null)
+                }
+                style={{ ...TS.input, colorScheme: 'dark' }}
+              >
+                <option value="">Sem subdivisão</option>
+                {subdivisoes.map((sd) => (
+                  <option key={sd.id} value={sd.id}>
+                    {sd.nome}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
         </div>

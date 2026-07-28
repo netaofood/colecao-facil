@@ -428,6 +428,7 @@ export function ColecaoDetalhe() {
         <ModalEditarItem
           item={editando}
           categorias={categorias}
+          subdivisoes={subdivisoes}
           aoFechar={() => setEditando(null)}
           aoSalvar={async (dados) => {
             await atualizarItem(editando.id, dados);
@@ -760,6 +761,7 @@ function ModalEditarColecao({
           />
         </div>
 
+
         {erro && (
           <div
             role="alert"
@@ -793,11 +795,13 @@ function ModalEditarColecao({
 function ModalEditarItem({
   item,
   categorias,
+  subdivisoes,
   aoFechar,
   aoSalvar,
 }: {
   item: Item;
   categorias: string[];
+  subdivisoes: Subdivisao[];
   aoFechar: () => void;
   aoSalvar: (dados: {
     numero: string | null;
@@ -805,6 +809,7 @@ function ModalEditarItem({
     categoria: string | null;
     raridade: string | null;
     foto_url: string | null;
+    subdivisao_id: string | null;
   }) => Promise<void>;
 }) {
   const [numero, setNumero] = useState(item.numero ?? '');
@@ -812,6 +817,7 @@ function ModalEditarItem({
   const [categoria, setCategoria] = useState(item.categoria ?? '');
   const [raridade, setRaridade] = useState(item.raridade ?? '');
   const [fotoUrl, setFotoUrl] = useState<string | null>(item.foto_url);
+  const [subdivisaoId, setSubdivisaoId] = useState(item.subdivisao_id ?? '');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -829,6 +835,7 @@ function ModalEditarItem({
               categoria: categoria.trim() || null,
               raridade: raridade || null,
               foto_url: fotoUrl,
+              subdivisao_id: subdivisaoId || null,
             });
           } catch (err) {
             setErro(err instanceof Error ? err.message : 'Erro ao salvar.');
@@ -893,6 +900,38 @@ function ModalEditarItem({
               ))}
             </select>
           </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={TS.label} htmlFor="ed-sub">
+            Subdivisão
+          </label>
+          <select
+            id="ed-sub"
+            value={subdivisaoId}
+            onChange={(e) => setSubdivisaoId(e.target.value)}
+            style={{ ...TS.input, colorScheme: 'dark' }}
+          >
+            <option value="">Sem subdivisão</option>
+            {subdivisoes.map((sd) => (
+              <option key={sd.id} value={sd.id}>
+                {sd.nome}
+              </option>
+            ))}
+          </select>
+          {subdivisoes.length === 0 && (
+            <div
+              style={{
+                fontSize: 11.5,
+                color: T.textMuted,
+                marginTop: 5,
+                fontFamily: T.fontBody,
+              }}
+            >
+              Esta coleção ainda não tem subdivisões. Crie pelo botão
+              Subdivisão.
+            </div>
+          )}
         </div>
 
         {erro && (
