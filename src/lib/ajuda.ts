@@ -184,18 +184,35 @@ A troca é combinada diretamente entre você e a outra pessoa. O Coleção Fáci
 const RELATORIOS: Ajuda = {
   titulo: 'Seus relatórios',
   texto: `
-Um resumo de como está o seu progresso.
+Aqui você vê o retrato do seu acervo, com filtros e gráficos.
 
-## O que aparece
+## Filtros
 
-- Quantas coleções, itens no total, quantos você já tem e quantas repetidas
-- Ranking das coleções que estão mais perto de completar
+- **Coleção** — analisa uma só ou todas juntas
+- **Categoria** — olha só um tipo, como Figurinhas ou Miniaturas
+- **Período** — muda a janela do gráfico de evolução
+
+Tudo na tela responde aos filtros, inclusive a exportação.
+
+## Os gráficos
+
+**Composição** — a rosca mostra quanto você já tem, quanto está repetido e quanto falta, com a porcentagem no centro.
+
+**Indicadores** — dois medidores: quanto do acervo está completo, e quanto do que você tem está repetido. Repetida demais é sinal de que vale trocar.
+
+**Evolução do acervo** — quantos itens você acumulou ao longo do tempo, contando de quando cada um foi marcado.
+
+**Mais perto de completar** — suas coleções ordenadas por porcentagem. A barra fica verde quando chega a 100%.
+
+**Progresso por raridade** — mostra se o que falta são as comuns ou justamente as lendárias.
+
+**Itens por categoria** — o tamanho de cada categoria no seu acervo.
+
+**Onde falta mais** — as coleções com mais itens faltando, em número absoluto.
 
 ## Exportar
 
-O botão **CSV** baixa a planilha daquela coleção, com todos os itens e o estado de cada um. Abre no Excel e no Google Planilhas com os acentos corretos.
-
-Serve para guardar uma cópia ou trabalhar os dados fora do app.
+O botão no fim baixa a planilha do que está filtrado, com coleção, subdivisão, número, nome, categoria, raridade e o estado de cada item. Abre no Excel e no Google Planilhas com os acentos corretos.
 `,
 };
 
