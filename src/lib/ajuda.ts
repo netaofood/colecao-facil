@@ -42,6 +42,12 @@ Clique em **Nova coleção** e dê um nome. Categoria e ano são opcionais, mas 
 
 A categoria guarda o que você já digitou antes e oferece como sugestão nas próximas.
 
+## Organização por categoria
+
+Tendo coleções de categorias diferentes, elas aparecem agrupadas, cada categoria numa caixa com o progresso somado. Clique no título para recolher.
+
+Os botões **Por categoria** e **Tudo junto** trocam entre as duas visões. Coleções sem categoria ficam num grupo no fim.
+
 ## O cartão de cada coleção
 
 Mostra quantos itens você já tem do total, a porcentagem e quantas repetidas estão disponíveis para troca.

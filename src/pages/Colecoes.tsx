@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Library } from 'lucide-react';
+import { Plus, Library, LayoutGrid, FolderTree } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
 import {
@@ -12,6 +12,7 @@ import { InputCategoria } from '../components/InputCategoria';
 import { usePodeCadastrar } from '../components/AvisoAssinatura';
 import type { ColecaoComProgresso } from '../lib/tipos';
 import { BarraProgresso } from '../components/BarraProgresso';
+import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 
 export function Colecoes() {
   const { perfil } = useAuth();
@@ -23,6 +24,8 @@ export function Colecoes() {
   const [modal, setModal] = useState<'branco' | null>(null);
   const [categorias, setCategorias] = useState<string[]>([]);
   const podeCadastrar = usePodeCadastrar();
+  const [agrupar, setAgrupar] = useState(true);
+  const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!perfil) return;
@@ -45,6 +48,9 @@ export function Colecoes() {
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  const grupos = agruparPorCategoria(minhas);
+  const valeAgrupar = grupos.length > 1;
 
   return (
     <div>
@@ -106,10 +112,56 @@ export function Colecoes() {
         </div>
       )}
 
+      {valeAgrupar && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <BotaoVisao
+            ativa={agrupar}
+            Icone={FolderTree}
+            rotulo="Por categoria"
+            aoClicar={() => setAgrupar(true)}
+          />
+          <BotaoVisao
+            ativa={!agrupar}
+            Icone={LayoutGrid}
+            rotulo="Tudo junto"
+            aoClicar={() => setAgrupar(false)}
+          />
+        </div>
+      )}
+
       {carregando ? (
         <Aviso texto="Carregando..." />
       ) : minhas.length === 0 ? (
-        <Aviso texto="Escolha uma das opções acima para começar." />
+        <Aviso texto="Crie sua primeira coleção acima." />
+      ) : agrupar && valeAgrupar ? (
+        grupos.map((g) => (
+          <BlocoSubdivisao
+            key={g.chave}
+            titulo={g.nome}
+            progresso={{ tenho: g.tenho, total: g.total }}
+            recolhido={recolhidos.has(g.chave)}
+            aoAlternar={() =>
+              setRecolhidos((r) => {
+                const novo = new Set(r);
+                if (novo.has(g.chave)) novo.delete(g.chave);
+                else novo.add(g.chave);
+                return novo;
+              })
+            }
+          >
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: 12,
+              }}
+            >
+              {g.colecoes.map((c) => (
+                <CartaoColecao key={c.id} colecao={c} />
+              ))}
+            </div>
+          </BlocoSubdivisao>
+        ))
       ) : (
         <div
           style={{
@@ -141,6 +193,76 @@ export function Colecoes() {
 }
 
 /* -------------------------------------------------------------- */
+
+interface GrupoCategoria {
+  chave: string;
+  nome: string;
+  colecoes: ColecaoComProgresso[];
+  tenho: number;
+  total: number;
+}
+
+/** Agrupa por categoria, com as sem categoria por último. */
+function agruparPorCategoria(
+  colecoes: ColecaoComProgresso[]
+): GrupoCategoria[] {
+  const mapa = new Map<string, GrupoCategoria>();
+
+  for (const c of colecoes) {
+    const nome = c.categoria?.trim() || 'Sem categoria';
+    const chave = nome.toLowerCase();
+
+    if (!mapa.has(chave)) {
+      mapa.set(chave, { chave, nome, colecoes: [], tenho: 0, total: 0 });
+    }
+    const g = mapa.get(chave)!;
+    g.colecoes.push(c);
+    g.tenho += c.total_tenho;
+    g.total += c.total_itens;
+  }
+
+  return [...mapa.values()].sort((a, b) => {
+    if (a.chave === 'sem categoria') return 1;
+    if (b.chave === 'sem categoria') return -1;
+    return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+  });
+}
+
+function BotaoVisao({
+  ativa,
+  Icone,
+  rotulo,
+  aoClicar,
+}: {
+  ativa: boolean;
+  Icone: typeof LayoutGrid;
+  rotulo: string;
+  aoClicar: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={aoClicar}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '8px 13px',
+        borderRadius: 99,
+        border: `1.5px solid ${ativa ? T.neon : T.border}`,
+        background: ativa ? T.neonFaint : 'transparent',
+        color: ativa ? T.neon : T.textSecondary,
+        fontFamily: T.fontBody,
+        fontSize: 12.5,
+        fontWeight: ativa ? 700 : 500,
+        cursor: 'pointer',
+      }}
+    >
+      <Icone size={14} />
+      {rotulo}
+    </button>
+  );
+}
 
 function PortaEntrada({
   Icone,
