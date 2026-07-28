@@ -101,6 +101,13 @@ export function semNumeroFinal(rotulo: string): string {
   return cortado;
 }
 
+export interface RotuloItem {
+  /** Texto grande no centro da célula */
+  principal: string;
+  /** Número, mostrado pequeno acima. Ausente quando repetiria o principal. */
+  secundario: string | null;
+}
+
 /**
  * Monta os rótulos de uma lista inteira.
  *
@@ -111,23 +118,39 @@ export function semNumeroFinal(rotulo: string): string {
 export function rotulosDaLista(
   itens: Item[],
   nomeSubdivisao?: string | null
-): Map<string, string> {
-  const curtos = itens.map((i) => ({
+): Map<string, RotuloItem> {
+  // Item com nome de verdade: o nome é o que informa. O número vira apoio.
+  const comNome = new Map<string, RotuloItem>();
+  const semNome: Item[] = [];
+
+  for (const item of itens) {
+    const nome = item.nome?.trim();
+    if (nome && !nomeRedundante(item)) {
+      comNome.set(item.id, {
+        principal: nome,
+        secundario: item.numero?.trim() || null,
+      });
+    } else {
+      semNome.push(item);
+    }
+  }
+
+  // Os demais só têm código: aí vale encurtar tirando a subdivisão
+  const curtos = semNome.map((i) => ({
     id: i.id,
     texto: rotuloCurto(i, nomeSubdivisao),
   }));
 
-  const semNumero = curtos.map((c) => ({
-    id: c.id,
-    texto: semNumeroFinal(c.texto),
-  }));
+  const sem = curtos.map((c) => ({ id: c.id, texto: semNumeroFinal(c.texto) }));
+  const unicos = new Set(sem.map((c) => c.texto.toUpperCase()));
+  const podeTirar = unicos.size === sem.length;
 
-  const unicos = new Set(semNumero.map((c) => c.texto.toUpperCase()));
-  const podeTirar = unicos.size === semNumero.length;
+  const resultado = new Map(comNome);
+  for (const c of podeTirar ? sem : curtos) {
+    resultado.set(c.id, { principal: c.texto, secundario: null });
+  }
 
-  return new Map(
-    (podeTirar ? semNumero : curtos).map((c) => [c.id, c.texto])
-  );
+  return resultado;
 }
 
 /** Fonte menor conforme o rótulo cresce, para caber sem cortar. */
