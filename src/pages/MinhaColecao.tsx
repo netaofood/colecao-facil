@@ -10,6 +10,7 @@ import {
   Plus,
   CheckSquare,
   Zap,
+  Pencil,
 } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
@@ -20,6 +21,8 @@ import {
   listarMeusItens,
   marcarItem,
   marcarVarios,
+  atualizarItem,
+  atualizarColecao,
 } from '../lib/api';
 import type {
   Colecao,
@@ -38,7 +41,6 @@ import { AdicionarItens } from '../components/AdicionarItens';
 import { Modal } from './Colecoes';
 import { usePodeCadastrar } from '../components/AvisoAssinatura';
 import { UploadImagem } from '../components/UploadImagem';
-import { atualizarItem } from '../lib/api';
 import { BlocoSubdivisao } from '../components/BlocoSubdivisao';
 
 type Filtro = 'todos' | 'falta' | 'tenho' | 'repetida';
@@ -65,6 +67,7 @@ export function MinhaColecao() {
   const [aberto, setAberto] = useState<Item | null>(null);
   const [conferencia, setConferencia] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
+  const [editandoColecao, setEditandoColecao] = useState(false);
   const podeCadastrar = usePodeCadastrar();
   const [resumo, setResumo] = useState<string | null>(null);
   const [selecao, setSelecao] = useState<Set<string>>(new Set());
@@ -258,8 +261,37 @@ export function MinhaColecao() {
         Coleções
       </Link>
 
-      <h1 style={{ ...TS.titulo, fontSize: 21, margin: '0 0 4px' }}>
+      <h1
+        style={{
+          ...TS.titulo,
+          fontSize: 21,
+          margin: '0 0 4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flexWrap: 'wrap',
+        }}
+      >
         {colecao.nome}
+        {perfil?.id === colecao.dono_id && (
+          <button
+            type="button"
+            onClick={() => setEditandoColecao(true)}
+            aria-label="Renomear coleção"
+            title="Renomear coleção"
+            style={{
+              background: 'transparent',
+              border: `1px solid ${T.border}`,
+              borderRadius: T.radiusSm,
+              color: T.textSecondary,
+              cursor: 'pointer',
+              display: 'flex',
+              padding: 6,
+            }}
+          >
+            <Pencil size={15} />
+          </button>
+        )}
       </h1>
       <div
         style={{
@@ -531,6 +563,18 @@ export function MinhaColecao() {
         </div>
       )}
 
+      {editandoColecao && (
+        <ModalNomeColecao
+          nomeAtual={colecao.nome}
+          aoFechar={() => setEditandoColecao(false)}
+          aoSalvar={async (nome) => {
+            await atualizarColecao(colecao.id, { nome });
+            setEditandoColecao(false);
+            await carregar();
+          }}
+        />
+      )}
+
       {adicionando && (
         <Modal titulo="Adicionar itens" aoFechar={() => setAdicionando(false)}>
           <AdicionarItens
@@ -615,6 +659,89 @@ function Grade({
         />
       ))}
     </div>
+  );
+}
+
+function ModalNomeColecao({
+  nomeAtual,
+  aoFechar,
+  aoSalvar,
+}: {
+  nomeAtual: string;
+  aoFechar: () => void;
+  aoSalvar: (nome: string) => Promise<void>;
+}) {
+  const [nome, setNome] = useState(nomeAtual);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  return (
+    <Modal titulo="Renomear coleção" aoFechar={aoFechar}>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!nome.trim()) return setErro('O nome não pode ficar vazio.');
+          setErro(null);
+          setSalvando(true);
+          try {
+            await aoSalvar(nome.trim());
+          } catch (err) {
+            setErro(err instanceof Error ? err.message : 'Erro ao salvar.');
+            setSalvando(false);
+          }
+        }}
+      >
+        <div style={{ marginBottom: 14 }}>
+          <label style={TS.label} htmlFor="nome-colecao-rapido">
+            Nome
+          </label>
+          <input
+            id="nome-colecao-rapido"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            required
+            autoFocus
+            style={TS.input}
+          />
+          <div
+            style={{
+              fontSize: 11.5,
+              color: T.textMuted,
+              marginTop: 6,
+              fontFamily: T.fontBody,
+            }}
+          >
+            Para mudar categoria, ano e descrição, use Editar catálogo.
+          </div>
+        </div>
+
+        {erro && (
+          <div
+            role="alert"
+            style={{
+              background: T.erroFaint,
+              border: `1px solid ${T.erro}`,
+              borderRadius: T.radiusSm,
+              padding: '10px 12px',
+              marginBottom: 12,
+              fontSize: 13,
+              color: T.erro,
+              fontFamily: T.fontBody,
+            }}
+          >
+            {erro}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={salvando}
+          style={{ ...TS.botaoPrimario, width: '100%', opacity: salvando ? 0.6 : 1 }}
+        >
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </button>
+      </form>
+    </Modal>
   );
 }
 

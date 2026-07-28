@@ -9,6 +9,7 @@ import {
   Pencil,
   Wand2,
   Type,
+  Pencil as Lapis,
 } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
@@ -20,6 +21,7 @@ import {
   apagarItem,
   apagarColecao,
   atualizarItem,
+  atualizarColecao,
   listarCategoriasDoUsuario,
   listarNomesSubdivisoesDoUsuario,
 } from '../lib/api';
@@ -47,7 +49,13 @@ export function ColecaoDetalhe() {
   const [erro, setErro] = useState<string | null>(null);
 
   const [modal, setModal] = useState<
-    'itens' | 'subdivisao' | 'apagar' | 'organizar' | 'renomear' | null
+    | 'itens'
+    | 'subdivisao'
+    | 'apagar'
+    | 'organizar'
+    | 'renomear'
+    | 'editar'
+    | null
   >(null);
   const [busca, setBusca] = useState('');
   const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
@@ -153,6 +161,25 @@ export function ColecaoDetalhe() {
             }}
           >
             {colecao.nome}
+            {ehDono && (
+              <button
+                type="button"
+                onClick={() => setModal('editar')}
+                aria-label="Editar coleção"
+                title="Editar coleção"
+                style={{
+                  background: 'transparent',
+                  border: `1px solid ${T.border}`,
+                  borderRadius: T.radiusSm,
+                  color: T.textSecondary,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  padding: 6,
+                }}
+              >
+                <Lapis size={15} />
+              </button>
+            )}
           </h1>
           <div
             style={{
@@ -424,6 +451,19 @@ export function ColecaoDetalhe() {
         />
       )}
 
+      {modal === 'editar' && (
+        <ModalEditarColecao
+          colecao={colecao}
+          categorias={categorias}
+          aoFechar={() => setModal(null)}
+          aoSalvar={async (dados) => {
+            await atualizarColecao(colecao.id, dados);
+            setModal(null);
+            await carregar();
+          }}
+        />
+      )}
+
       {modal === 'renomear' && (
         <ModalRenomear
           itens={itens}
@@ -618,6 +658,135 @@ function CartaoItem({
         </button>
       )}
     </div>
+  );
+}
+
+function ModalEditarColecao({
+  colecao,
+  categorias,
+  aoFechar,
+  aoSalvar,
+}: {
+  colecao: Colecao;
+  categorias: string[];
+  aoFechar: () => void;
+  aoSalvar: (dados: {
+    nome: string;
+    descricao: string | null;
+    categoria: string | null;
+    ano: number | null;
+  }) => Promise<void>;
+}) {
+  const [nome, setNome] = useState(colecao.nome);
+  const [descricao, setDescricao] = useState(colecao.descricao ?? '');
+  const [categoria, setCategoria] = useState(colecao.categoria ?? '');
+  const [ano, setAno] = useState(colecao.ano ? String(colecao.ano) : '');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  return (
+    <Modal titulo="Editar coleção" aoFechar={aoFechar}>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!nome.trim()) return setErro('O nome não pode ficar vazio.');
+          setErro(null);
+          setSalvando(true);
+          try {
+            await aoSalvar({
+              nome: nome.trim(),
+              descricao: descricao.trim() || null,
+              categoria: categoria.trim() || null,
+              ano: ano ? Number(ano) : null,
+            });
+          } catch (err) {
+            setErro(err instanceof Error ? err.message : 'Erro ao salvar.');
+            setSalvando(false);
+          }
+        }}
+      >
+        <div style={{ marginBottom: 14 }}>
+          <label style={TS.label} htmlFor="ec-nome">
+            Nome
+          </label>
+          <input
+            id="ec-nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            required
+            autoFocus
+            style={TS.input}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+          <div style={{ flex: 1 }}>
+            <label style={TS.label} htmlFor="ec-cat">
+              Categoria
+            </label>
+            <InputCategoria
+              id="ec-cat"
+              valor={categoria}
+              aoMudar={setCategoria}
+              sugestoes={categorias}
+            />
+          </div>
+          <div style={{ width: 100 }}>
+            <label style={TS.label} htmlFor="ec-ano">
+              Ano
+            </label>
+            <input
+              id="ec-ano"
+              type="number"
+              value={ano}
+              onChange={(e) => setAno(e.target.value)}
+              min={1800}
+              max={2200}
+              style={TS.input}
+            />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={TS.label} htmlFor="ec-desc">
+            Descrição
+          </label>
+          <textarea
+            id="ec-desc"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            rows={2}
+            style={{ ...TS.input, resize: 'vertical', fontFamily: T.fontBody }}
+          />
+        </div>
+
+        {erro && (
+          <div
+            role="alert"
+            style={{
+              background: T.erroFaint,
+              border: `1px solid ${T.erro}`,
+              borderRadius: T.radiusSm,
+              padding: '10px 12px',
+              marginBottom: 12,
+              fontSize: 13,
+              color: T.erro,
+              fontFamily: T.fontBody,
+            }}
+          >
+            {erro}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={salvando}
+          style={{ ...TS.botaoPrimario, width: '100%', opacity: salvando ? 0.6 : 1 }}
+        >
+          {salvando ? 'Salvando...' : 'Salvar'}
+        </button>
+      </form>
+    </Modal>
   );
 }
 
