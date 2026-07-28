@@ -37,6 +37,25 @@ export const msg = {
     return partes.join('\n') + ASSINATURA;
   },
 
+  /** Cobrança da mensalidade */
+  cobranca: (
+    nome: string,
+    valor: string,
+    situacao: 'vencida' | 'vencendo' | 'em_dia',
+    vencimento: string
+  ) => {
+    const abertura = `Oi ${nome}, tudo bem?`;
+
+    const meio =
+      situacao === 'vencida'
+        ? `Sua assinatura do Coleção Fácil venceu em ${vencimento}.\n\nPara voltar a cadastrar itens, é só acertar a mensalidade de ${valor}.`
+        : situacao === 'vencendo'
+          ? `Passando para lembrar que sua assinatura do Coleção Fácil vence em ${vencimento}.\n\nA mensalidade é de ${valor}.`
+          : `Sua assinatura do Coleção Fácil está em dia, válida até ${vencimento}.\n\nMensalidade de ${valor}.`;
+
+    return `${abertura}\n\n${meio}${ASSINATURA}`;
+  },
+
   /** Mesma lista, separada por coleção */
   listaTrocaVarias: (
     grupos: { nome: string; itens: string[] }[],

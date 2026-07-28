@@ -261,6 +261,14 @@ Quem vence **continua vendo tudo e marcando o que já possui**, mas não cria co
 
 Contas novas começam com 7 dias de cortesia.
 
+## Cobrar
+
+Na aba **Pagamentos**, cada cliente aparece numa linha com a situação da assinatura e o último pagamento. Quem está devendo vem primeiro.
+
+Cada linha tem três ações: **Lançar pagamento**, **Cobrar** pelo WhatsApp com a mensagem já escrita conforme a situação, e **Copiar** o mesmo texto para mandar por outro caminho.
+
+Se o colecionador cadastrou o WhatsApp, o botão já abre a conversa dele. Senão, abre o WhatsApp para você escolher o contato.
+
 ## Gerenciar contas
 
 A lista mostra todo mundo, com data de criação. Quem ainda não entrou aparece marcado como **nunca acessou**.

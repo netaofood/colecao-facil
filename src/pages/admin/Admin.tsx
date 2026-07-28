@@ -10,6 +10,7 @@ import {
   CreditCard,
   Search,
   KeyRound,
+  Receipt,
   CheckCircle2,
   AlertTriangle,
   X,
@@ -33,6 +34,9 @@ import type {
   SituacaoAssinatura,
 } from '../../lib/api';
 import { Modal } from '../Colecoes';
+import { BotaoWhatsApp } from '../../components/BotaoWhatsApp';
+import { BotaoCopiarLink } from '../../components/BotaoCopiarLink';
+import { msg } from '../../lib/mensagens';
 import { CampoSenha } from '../../components/CampoSenha';
 
 type Aba = 'painel' | 'colecionadores' | 'pagamentos';
@@ -43,6 +47,7 @@ export interface UsuarioLinha {
   nome: string | null;
   apelido: string | null;
   cidade: string | null;
+  whatsapp: string | null;
   papel: string;
   ativo: boolean;
   isento: boolean;
@@ -52,7 +57,7 @@ export interface UsuarioLinha {
 }
 
 const CAMPOS =
-  'id, email, nome, apelido, cidade, papel, ativo, isento, assinatura_ate, primeiro_acesso_em, created_at';
+  'id, email, nome, apelido, cidade, whatsapp, papel, ativo, isento, assinatura_ate, primeiro_acesso_em, created_at';
 
 export function Admin() {
   const [aba, setAba] = useState<Aba>('painel');
@@ -724,14 +729,15 @@ function Pagamentos({
   usuarios: UsuarioLinha[];
   aoMudar: () => Promise<void>;
 }) {
-  const [lista, setLista] = useState<Pagamento[]>([]);
+  const [historico, setHistorico] = useState<Pagamento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [cobrando, setCobrando] = useState<UsuarioLinha | null>(null);
+  const [verHistorico, setVerHistorico] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
-      setLista(await listarPagamentos());
+      setHistorico(await listarPagamentos());
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Erro ao carregar.');
     } finally {
@@ -746,10 +752,37 @@ function Pagamentos({
   const nomes = new Map(usuarios.map((u) => [u.id, u.nome ?? u.email]));
 
   const mesAtual = new Date().toISOString().slice(0, 7);
-  const doMes = lista.filter((p) => p.pago_em.startsWith(mesAtual));
+  const doMes = historico.filter((p) => p.pago_em.startsWith(mesAtual));
   const recebidoNoMes = doMes.reduce((s, p) => s + Number(p.valor), 0);
 
-  const pagantes = usuarios.filter((u) => !u.isento);
+  // Último pagamento de cada um, para mostrar na linha
+  const ultimoPagamento = new Map<string, Pagamento>();
+  for (const p of historico) {
+    if (!ultimoPagamento.has(p.usuario_id)) ultimoPagamento.set(p.usuario_id, p);
+  }
+
+  // Quem está devendo aparece primeiro
+  const ordem: Record<SituacaoAssinatura, number> = {
+    vencida: 0,
+    vencendo: 1,
+    em_dia: 2,
+    isento: 3,
+  };
+
+  const clientes = usuarios
+    .filter((u) => !u.isento)
+    .sort((a, b) => {
+      const sa = ordem[situacaoAssinatura(a.isento, a.assinatura_ate)];
+      const sb = ordem[situacaoAssinatura(b.isento, b.assinatura_ate)];
+      if (sa !== sb) return sa - sb;
+      return (a.nome ?? a.email).localeCompare(b.nome ?? b.email, 'pt-BR');
+    });
+
+  const aReceber = clientes.filter((u) =>
+    ['vencida', 'vencendo'].includes(
+      situacaoAssinatura(u.isento, u.assinatura_ate)
+    )
+  );
 
   return (
     <div>
@@ -769,118 +802,217 @@ function Pagamentos({
           moedaBRL
         />
         <Cartao
-          Icone={CheckCircle2}
-          rotulo="Pagamentos no mês"
+          Icone={Receipt}
+          rotulo="Lançamentos no mês"
           valor={doMes.length}
           cor={T.textPrimary}
         />
         <Cartao
           Icone={Users}
           rotulo="Assinantes"
-          valor={pagantes.length}
+          valor={clientes.length}
           cor={T.neon}
+        />
+        <Cartao
+          Icone={AlertTriangle}
+          rotulo="A cobrar"
+          valor={aReceber.length}
+          cor={aReceber.length > 0 ? T.aviso : T.textMuted}
         />
       </div>
 
-      <div style={{ ...TS.label, marginBottom: 10 }}>Registrar pagamento</div>
-      <div
-        style={{
-          display: 'flex',
-          gap: 7,
-          flexWrap: 'wrap',
-          marginBottom: 24,
-        }}
-      >
-        {pagantes.length === 0 ? (
-          <Caixa texto="Nenhum assinante cadastrado." />
-        ) : (
-          pagantes.map((u) => (
-            <button
-              key={u.id}
-              type="button"
-              onClick={() => setCobrando(u)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                padding: '9px 13px',
-                borderRadius: 99,
-                border: `1px solid ${T.border}`,
-                background: 'transparent',
-                color: T.textSecondary,
-                fontFamily: T.fontBody,
-                fontSize: 12.5,
-                cursor: 'pointer',
-              }}
-            >
-              <CreditCard size={13} />
-              {u.nome ?? u.email}
-            </button>
-          ))
-        )}
-      </div>
-
-      <div style={{ ...TS.label, marginBottom: 10 }}>Histórico</div>
-
       {erro && <Caixa texto={erro} erro />}
 
-      {carregando ? (
-        <Caixa texto="Carregando..." />
-      ) : lista.length === 0 ? (
-        <Caixa texto="Nenhum pagamento registrado ainda." />
+      <div style={{ ...TS.label, marginBottom: 10 }}>
+        Clientes · {clientes.length}
+      </div>
+
+      {clientes.length === 0 ? (
+        <Caixa texto="Nenhum assinante cadastrado." />
       ) : (
-        lista.map((p) => (
-          <div
-            key={p.id}
-            style={{
-              ...TS.card,
-              padding: 13,
-              marginBottom: 7,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ flex: '1 1 160px', minWidth: 0 }}>
-              <div
-                style={{
-                  fontFamily: T.fontBody,
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  color: T.textPrimary,
-                }}
-              >
-                {nomes.get(p.usuario_id) ?? 'Conta removida'}
-              </div>
-              <div
-                style={{
-                  fontFamily: T.fontBody,
-                  fontSize: 11.5,
-                  color: T.textMuted,
-                  marginTop: 2,
-                }}
-              >
-                pago em{' '}
-                {new Date(`${p.pago_em}T12:00`).toLocaleDateString('pt-BR')}
-                {' · vale até '}
-                {new Date(`${p.vigencia_ate}T12:00`).toLocaleDateString('pt-BR')}
-                {p.forma && ` · ${p.forma}`}
-              </div>
-            </div>
-            <span
+        clientes.map((u) => {
+          const situacao = situacaoAssinatura(u.isento, u.assinatura_ate);
+          const ultimo = ultimoPagamento.get(u.id);
+
+          return (
+            <div
+              key={u.id}
               style={{
-                fontFamily: T.fontTitle,
-                fontSize: 15,
-                fontWeight: 700,
-                color: T.tenho,
+                ...TS.card,
+                marginBottom: 8,
+                padding: 14,
+                borderColor:
+                  situacao === 'vencida'
+                    ? T.erro
+                    : situacao === 'vencendo'
+                      ? T.aviso
+                      : T.border,
               }}
             >
-              {moeda(Number(p.valor))}
-            </span>
-          </div>
-        ))
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ flex: '1 1 190px', minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontFamily: T.fontBody,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: T.textPrimary,
+                    }}
+                  >
+                    {u.nome ?? u.email}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: T.fontBody,
+                      fontSize: 11.5,
+                      color: T.textMuted,
+                      marginTop: 3,
+                    }}
+                  >
+                    {ultimo
+                      ? `último em ${new Date(`${ultimo.pago_em}T12:00`).toLocaleDateString('pt-BR')} · ${moeda(Number(ultimo.valor))}`
+                      : 'nenhum pagamento registrado'}
+                  </div>
+                </div>
+
+                <SeloAssinatura usuario={u} />
+              </div>
+
+              {/* Ações */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setCobrando(u)}
+                  style={{
+                    ...TS.botaoPrimario,
+                    flex: '1 1 150px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 7,
+                    padding: '10px 14px',
+                  }}
+                >
+                  <Receipt size={15} />
+                  Lançar pagamento
+                </button>
+
+                <div style={{ flex: '1 1 150px' }}>
+                  <BotaoWhatsApp
+                    mensagem={msg.cobranca(
+                      (u.nome ?? '').split(' ')[0] || 'tudo bem',
+                      moeda(VALOR_PLANO),
+                      situacao === 'isento' ? 'em_dia' : situacao,
+                      formatarData(u.assinatura_ate)
+                    )}
+                    telefone={u.whatsapp ?? undefined}
+                    variant="full"
+                    rotulo={u.whatsapp ? 'Cobrar' : 'Cobrar (escolher)'}
+                  />
+                </div>
+
+                <div style={{ flex: '0 1 130px' }}>
+                  <BotaoCopiarLink
+                    texto={msg.cobranca(
+                      (u.nome ?? '').split(' ')[0] || 'tudo bem',
+                      moeda(VALOR_PLANO),
+                      situacao === 'isento' ? 'em_dia' : situacao,
+                      formatarData(u.assinatura_ate)
+                    )}
+                    variant="full"
+                    rotulo="Copiar"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })
       )}
+
+      {/* Histórico */}
+      <button
+        type="button"
+        onClick={() => setVerHistorico((v) => !v)}
+        style={{
+          ...TS.botaoSecundario,
+          marginTop: 18,
+          marginBottom: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+        }}
+      >
+        <Receipt size={15} />
+        {verHistorico
+          ? 'Ocultar histórico'
+          : `Ver histórico completo (${historico.length})`}
+      </button>
+
+      {verHistorico &&
+        (carregando ? (
+          <Caixa texto="Carregando..." />
+        ) : historico.length === 0 ? (
+          <Caixa texto="Nenhum pagamento registrado ainda." />
+        ) : (
+          historico.map((p) => (
+            <div
+              key={p.id}
+              style={{
+                ...TS.card,
+                padding: 12,
+                marginBottom: 6,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: T.fontBody,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: T.textPrimary,
+                  }}
+                >
+                  {nomes.get(p.usuario_id) ?? 'Conta removida'}
+                </div>
+                <div
+                  style={{
+                    fontFamily: T.fontBody,
+                    fontSize: 11,
+                    color: T.textMuted,
+                    marginTop: 2,
+                  }}
+                >
+                  {new Date(`${p.pago_em}T12:00`).toLocaleDateString('pt-BR')}
+                  {' · vale até '}
+                  {new Date(`${p.vigencia_ate}T12:00`).toLocaleDateString('pt-BR')}
+                  {p.forma && ` · ${p.forma}`}
+                </div>
+              </div>
+              <span
+                style={{
+                  fontFamily: T.fontTitle,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: T.tenho,
+                }}
+              >
+                {moeda(Number(p.valor))}
+              </span>
+            </div>
+          ))
+        ))}
 
       {cobrando && (
         <ModalPagamento
