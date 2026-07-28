@@ -163,7 +163,9 @@ Esta tela monta o texto pronto para você negociar. O app não intermedeia nada:
 
 ## Como usar
 
-Escolha a coleção, escolha a aba, toque nos itens que quer incluir. Use a busca para achar rápido, ou **Marcar todos**.
+Escolha a coleção — ou deixe em **Todas as coleções** para juntar tudo numa lista só. Escolha a aba, toque nos itens que quer incluir. Use a busca para achar rápido, ou **Marcar todos**.
+
+Com várias coleções, os itens aparecem separados por coleção, e a mensagem sai organizada do mesmo jeito.
 
 Conforme você escolhe, aparece embaixo a prévia do texto. Confira e mande.
 

@@ -14,6 +14,7 @@ export function Trocas() {
   const { perfil } = useAuth();
 
   const [colecoes, setColecoes] = useState<ColecaoComProgresso[]>([]);
+  // Vazio significa todas as coleções
   const [colecaoId, setColecaoId] = useState('');
   const [itens, setItens] = useState<Item[]>([]);
   const [meus, setMeus] = useState<Map<string, ItemUsuario>>(new Map());
@@ -28,20 +29,23 @@ export function Trocas() {
   useEffect(() => {
     if (!perfil) return;
     listarMinhasColecoes(perfil.id)
-      .then((c) => {
-        setColecoes(c);
-        if (c.length > 0) setColecaoId(c[0].id);
-      })
+      .then(setColecoes)
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false));
   }, [perfil]);
 
   const carregarItens = useCallback(async () => {
-    if (!perfil || !colecaoId) return;
+    if (!perfil || colecoes.length === 0) return;
     setBuscandoItens(true);
     setErro(null);
     try {
-      const lista = await listarItens(colecaoId);
+      const alvos = colecaoId
+        ? colecoes.filter((c) => c.id === colecaoId)
+        : colecoes;
+
+      const listas = await Promise.all(alvos.map((c) => listarItens(c.id)));
+      const lista = listas.flat();
+
       setItens(lista);
       setMeus(await listarMeusItens(perfil.id, lista.map((i) => i.id)));
       setEscolhidos(new Set());
@@ -50,7 +54,7 @@ export function Trocas() {
     } finally {
       setBuscandoItens(false);
     }
-  }, [perfil, colecaoId]);
+  }, [perfil, colecaoId, colecoes]);
 
   useEffect(() => {
     void carregarItens();
@@ -74,19 +78,61 @@ export function Trocas() {
     );
   }, [itens, meus, lado, busca]);
 
+  /** Disponíveis separadas por coleção, para não misturar tudo. */
+  const porColecao = useMemo(() => {
+    const nomes = new Map(colecoes.map((c) => [c.id, c.nome]));
+    const grupos: { id: string; nome: string; itens: Item[] }[] = [];
+    const indice = new Map<string, number>();
+
+    for (const item of disponiveis) {
+      if (!indice.has(item.colecao_id)) {
+        indice.set(item.colecao_id, grupos.length);
+        grupos.push({
+          id: item.colecao_id,
+          nome: nomes.get(item.colecao_id) ?? 'Coleção',
+          itens: [],
+        });
+      }
+      grupos[indice.get(item.colecao_id)!].itens.push(item);
+    }
+    return grupos;
+  }, [disponiveis, colecoes]);
+
   const selecionados = itens.filter((i) => escolhidos.has(i.id));
 
   const texto = useMemo(() => {
-    if (!colecao || selecionados.length === 0) return '';
-    const rotulos = selecionados.map((i) => {
+    if (selecionados.length === 0) return '';
+
+    const rotular = (i: Item) => {
       const qtd = meus.get(i.id)?.quantidade_repetida ?? 0;
       const base = i.numero || i.nome;
       return lado === 'tenho' && qtd > 1 ? `${base} (${qtd}x)` : base;
-    });
-    return lado === 'tenho'
-      ? msg.listaTroca(colecao.nome, rotulos, [])
-      : msg.listaTroca(colecao.nome, [], rotulos);
-  }, [colecao, selecionados, meus, lado]);
+    };
+
+    // Uma coleção escolhida: mensagem simples
+    if (colecao) {
+      const rotulos = selecionados.map(rotular);
+      return lado === 'tenho'
+        ? msg.listaTroca(colecao.nome, rotulos, [])
+        : msg.listaTroca(colecao.nome, [], rotulos);
+    }
+
+    // Todas: agrupa por coleção, mantendo a ordem da lista
+    const nomes = new Map(colecoes.map((c) => [c.id, c.nome]));
+    const grupos: { nome: string; itens: string[] }[] = [];
+    const indice = new Map<string, number>();
+
+    for (const item of selecionados) {
+      const nome = nomes.get(item.colecao_id) ?? 'Coleção';
+      if (!indice.has(item.colecao_id)) {
+        indice.set(item.colecao_id, grupos.length);
+        grupos.push({ nome, itens: [] });
+      }
+      grupos[indice.get(item.colecao_id)!].itens.push(rotular(item));
+    }
+
+    return msg.listaTrocaVarias(grupos, lado);
+  }, [colecao, colecoes, selecionados, meus, lado]);
 
   function alternar(id: string) {
     setEscolhidos((a) => {
@@ -132,6 +178,9 @@ export function Trocas() {
               onChange={(e) => setColecaoId(e.target.value)}
               style={{ ...TS.input, colorScheme: 'dark' }}
             >
+              <option value="">
+                Todas as coleções ({colecoes.length})
+              </option>
               {colecoes.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}
@@ -168,8 +217,12 @@ export function Trocas() {
             <Caixa
               texto={
                 lado === 'tenho'
-                  ? 'Você ainda não marcou nenhuma repetida nesta coleção.'
-                  : 'Nada faltando nesta coleção. Parabéns!'
+                  ? colecao
+                    ? 'Você ainda não marcou nenhuma repetida nesta coleção.'
+                    : 'Você ainda não marcou nenhuma repetida.'
+                  : colecao
+                    ? 'Nada faltando nesta coleção. Parabéns!'
+                    : 'Nada faltando em nenhuma coleção. Parabéns!'
               }
             />
           ) : (
@@ -222,47 +275,78 @@ export function Trocas() {
                 </button>
               </div>
 
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 6,
-                  marginBottom: 20,
-                }}
-              >
-                {disponiveis.map((item) => {
-                  const marcado = escolhidos.has(item.id);
-                  const qtd = meus.get(item.id)?.quantidade_repetida ?? 0;
-                  const cor = lado === 'tenho' ? T.repetida : T.neon;
+              <div style={{ marginBottom: 20 }}>
+                {porColecao.map((grupo) => (
+                  <div key={grupo.id} style={{ marginBottom: 16 }}>
+                    {/* O título só aparece quando há mais de uma coleção */}
+                    {porColecao.length > 1 && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          marginBottom: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            ...TS.label,
+                            marginBottom: 0,
+                            color: T.textSecondary,
+                          }}
+                        >
+                          {grupo.nome}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: T.fontBody,
+                            fontSize: 11,
+                            color: T.textMuted,
+                          }}
+                        >
+                          {grupo.itens.length}
+                        </span>
+                      </div>
+                    )}
 
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => alternar(item.id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '7px 12px',
-                        borderRadius: 99,
-                        border: `1.5px solid ${marcado ? cor : T.border}`,
-                        background: marcado ? `${T.bgHover}` : 'transparent',
-                        color: marcado ? cor : T.textSecondary,
-                        fontFamily: T.fontBody,
-                        fontSize: 12.5,
-                        fontWeight: marcado ? 700 : 500,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {marcado && <Check size={12} strokeWidth={3} />}
-                      {item.numero || item.nome}
-                      {lado === 'tenho' && qtd > 1 && (
-                        <span style={{ opacity: 0.75 }}>{qtd}x</span>
-                      )}
-                    </button>
-                  );
-                })}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {grupo.itens.map((item) => {
+                        const marcado = escolhidos.has(item.id);
+                        const qtd =
+                          meus.get(item.id)?.quantidade_repetida ?? 0;
+                        const cor = lado === 'tenho' ? T.repetida : T.neon;
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => alternar(item.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '7px 12px',
+                              borderRadius: 99,
+                              border: `1.5px solid ${marcado ? cor : T.border}`,
+                              background: marcado ? T.bgHover : 'transparent',
+                              color: marcado ? cor : T.textSecondary,
+                              fontFamily: T.fontBody,
+                              fontSize: 12.5,
+                              fontWeight: marcado ? 700 : 500,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {marcado && <Check size={12} strokeWidth={3} />}
+                            {item.numero || item.nome}
+                            {lado === 'tenho' && qtd > 1 && (
+                              <span style={{ opacity: 0.75 }}>{qtd}x</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}

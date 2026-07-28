@@ -37,6 +37,25 @@ export const msg = {
     return partes.join('\n') + ASSINATURA;
   },
 
+  /** Mesma lista, separada por coleção */
+  listaTrocaVarias: (
+    grupos: { nome: string; itens: string[] }[],
+    lado: 'tenho' | 'preciso'
+  ) => {
+    const total = grupos.reduce((soma, g) => soma + g.itens.length, 0);
+    const cabecalho =
+      lado === 'tenho'
+        ? `🔁 *Tenho para trocar* (${total})`
+        : `🔍 *Estou procurando* (${total})`;
+
+    const corpo = grupos
+      .filter((g) => g.itens.length > 0)
+      .map((g) => `*${g.nome}*\n${g.itens.join(', ')}`)
+      .join('\n\n');
+
+    return `${cabecalho}\n\n${corpo}${ASSINATURA}`;
+  },
+
 };
 
 /** Monta a URL do wa.me com a mensagem já codificada. */
