@@ -6,20 +6,21 @@
 const ASSINATURA = '\n\n— via Coleção Fácil · netao.app.br';
 
 export const msg = {
-  /** Compartilhar uma coleção */
-  colecao: (nome: string, progresso: string, url: string) =>
-    `Estou montando a coleção *${nome}* 📒\n\nJá tenho ${progresso}.\n${url}${ASSINATURA}`,
-
-  /** Divulgar o que falta */
-  faltantes: (nomeColecao: string, quantidade: number, url: string) =>
-    `Procuro figurinhas da coleção *${nomeColecao}* 🔍\n\n` +
-    `Faltam ${quantidade} ${quantidade === 1 ? 'item' : 'itens'} para completar.\n` +
-    `Veja a lista: ${url}${ASSINATURA}`,
+  /**
+   * Divulgar o que falta.
+   * Sem link: a coleção é privada, então um endereço não abriria para
+   * quem recebe. Quem manda a lista é o próprio texto.
+   */
+  faltantes: (nomeColecao: string, itens: string[]) =>
+    `Procuro da coleção *${nomeColecao}* 🔍\n\n` +
+    `Faltam ${itens.length} ${itens.length === 1 ? 'item' : 'itens'}:\n` +
+    `${itens.join(', ')}${ASSINATURA}`,
 
   /** Divulgar repetidas disponíveis para troca */
-  repetidas: (nomeColecao: string, quantidade: number, url: string) =>
-    `Tenho ${quantidade} ${quantidade === 1 ? 'repetida' : 'repetidas'} da coleção *${nomeColecao}* para trocar 🔁\n\n` +
-    `Confere aí: ${url}${ASSINATURA}`,
+  repetidas: (nomeColecao: string, itens: string[]) =>
+    `Tenho para trocar da coleção *${nomeColecao}* 🔁\n\n` +
+    `${itens.length} ${itens.length === 1 ? 'item' : 'itens'}:\n` +
+    `${itens.join(', ')}${ASSINATURA}`,
 
   /** Lista pronta para negociar troca */
   listaTroca: (

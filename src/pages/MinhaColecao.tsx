@@ -239,8 +239,29 @@ export function MinhaColecao() {
   if (carregando) return <Caixa texto="Carregando..." />;
   if (!colecao) return <Caixa texto={erro ?? 'Coleção não encontrada.'} erro />;
 
-  const urlColecao = `${window.location.origin}/colecoes/${colecao.id}`;
   const faltantes = totais.total - totais.tenho;
+
+  // Listas em texto puro. A coleção é privada, então mandar um endereço
+  // não serviria de nada para quem recebe: o que vale é a lista em si.
+  const rotuloDoItem = (i: Item) => i.numero || i.nome;
+
+  const textoFaltantes = msg.faltantes(
+    colecao.nome,
+    itens
+      .filter((i) => (meus.get(i.id)?.status ?? 'falta') === 'falta')
+      .map(rotuloDoItem)
+  );
+
+  const textoRepetidas = msg.repetidas(
+    colecao.nome,
+    itens
+      .filter((i) => meus.get(i.id)?.status === 'repetida')
+      .map((i) => {
+        const qtd = meus.get(i.id)?.quantidade_repetida ?? 1;
+        const base = rotuloDoItem(i);
+        return qtd > 1 ? `${base} (${qtd}x)` : base;
+      })
+  );
 
   return (
     <div>
@@ -535,30 +556,41 @@ export function MinhaColecao() {
           <div style={{ ...TS.label, marginBottom: 10 }}>Divulgar</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {faltantes > 0 && (
-              <div style={{ flex: '1 1 170px' }}>
-                <BotaoWhatsApp
-                  mensagem={msg.faltantes(colecao.nome, faltantes, urlColecao)}
-                  variant="full"
-                  rotulo="O que me falta"
-                />
-              </div>
+              <>
+                <div style={{ flex: '1 1 170px' }}>
+                  <BotaoWhatsApp
+                    mensagem={textoFaltantes}
+                    variant="full"
+                    rotulo="O que me falta"
+                  />
+                </div>
+                <div style={{ flex: '0 1 130px' }}>
+                  <BotaoCopiarLink
+                    texto={textoFaltantes}
+                    variant="full"
+                    rotulo="Copiar"
+                  />
+                </div>
+              </>
             )}
             {totais.repetidas > 0 && (
-              <div style={{ flex: '1 1 170px' }}>
-                <BotaoWhatsApp
-                  mensagem={msg.repetidas(
-                    colecao.nome,
-                    totais.unidadesRepetidas,
-                    urlColecao
-                  )}
-                  variant="full"
-                  rotulo="Minhas repetidas"
-                />
-              </div>
+              <>
+                <div style={{ flex: '1 1 170px' }}>
+                  <BotaoWhatsApp
+                    mensagem={textoRepetidas}
+                    variant="full"
+                    rotulo="Minhas repetidas"
+                  />
+                </div>
+                <div style={{ flex: '0 1 130px' }}>
+                  <BotaoCopiarLink
+                    texto={textoRepetidas}
+                    variant="full"
+                    rotulo="Copiar"
+                  />
+                </div>
+              </>
             )}
-            <div style={{ flex: '1 1 150px' }}>
-              <BotaoCopiarLink url={urlColecao} variant="full" />
-            </div>
           </div>
         </div>
       )}

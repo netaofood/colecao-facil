@@ -107,6 +107,12 @@ No fim do card também dá para mover o item de subdivisão. A mudança vale na 
 
 Não precisa ir até o catálogo para isso.
 
+## Divulgar
+
+Os botões no fim da tela mandam a **lista em texto**, não um endereço. Sua coleção é privada: um link não abriria para quem recebe.
+
+**O que me falta** manda a lista dos faltantes. **Minhas repetidas** manda o que está sobrando, com a quantidade. Cada um tem o botão de copiar ao lado, para você mandar por onde quiser.
+
 ## Adicionar itens
 
 O botão **Adicionar itens** no topo abre o cadastro sem sair desta tela.
