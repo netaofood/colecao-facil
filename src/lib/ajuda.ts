@@ -101,7 +101,7 @@ O lápis ao lado do nome abre a renomeação rápida. Para mudar também categor
 
 ## Foto e subdivisão do item
 
-Toque no item e envie a foto ali mesmo. Já tendo foto, aparece o botão **Trocar foto** sobre a imagem.
+Toque no item e envie a foto ali mesmo. No celular, o app pergunta se você quer **tirar a foto na hora** ou **escolher da galeria**. Já tendo foto, aparece o botão **Trocar foto** sobre a imagem.
 
 No fim do card também dá para mover o item de subdivisão. A mudança vale na hora, e o item pula para o bloco certo.
 
