@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { UploadImagem } from '../components/UploadImagem';
 
 export function Perfil() {
-  const { perfil, recarregarPerfil } = useAuth();
+  const { perfil, recarregarPerfil, sair } = useAuth();
+  const navigate = useNavigate();
 
   const [nome, setNome] = useState('');
   const [apelido, setApelido] = useState('');
@@ -227,6 +230,48 @@ export function Perfil() {
         </button>
       </form>
 
+      {/* Sair. Ficava só no menu lateral do computador; no celular não
+          havia nenhuma saída. */}
+      <div style={{ marginTop: 26 }}>
+        <button
+          type="button"
+          onClick={async () => {
+            await sair();
+            navigate('/login');
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            width: '100%',
+            padding: '13px 20px',
+            background: 'transparent',
+            border: `1.5px solid ${T.border}`,
+            borderRadius: T.radius,
+            color: T.textSecondary,
+            fontSize: 14,
+            fontWeight: 600,
+            fontFamily: T.fontBody,
+            cursor: 'pointer',
+          }}
+        >
+          <LogOut size={17} />
+          Sair da conta
+        </button>
+
+        <div
+          style={{
+            fontFamily: T.fontBody,
+            fontSize: 11.5,
+            color: T.textMuted,
+            textAlign: 'center',
+            marginTop: 8,
+          }}
+        >
+          {perfil.email}
+        </div>
+      </div>
     </div>
   );
 }

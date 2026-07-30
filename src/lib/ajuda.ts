@@ -234,6 +234,10 @@ Seus dados pessoais dentro do app.
 - **Cidade e estado** — opcionais
 - **WhatsApp** — usado só se você marcar a opção de incluí-lo nas listas que compartilhar
 
+## Sair
+
+O botão **Sair da conta** fica no fim desta tela, com seu e-mail embaixo para você confirmar de qual conta está saindo. No computador também existe o Sair no menu lateral.
+
 ## Privacidade
 
 O app não expõe seu perfil para ninguém. Seu e-mail nunca é mostrado. O que sai daqui é só o que você mesmo compartilhar pelos botões de WhatsApp e copiar.
