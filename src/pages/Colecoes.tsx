@@ -25,7 +25,9 @@ export function Colecoes() {
   const [categorias, setCategorias] = useState<string[]>([]);
   const podeCadastrar = usePodeCadastrar();
   const [agrupar, setAgrupar] = useState(true);
-  const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
+  // Guarda quem está ABERTO. Vazio significa tudo fechado, que é como
+  // a tela deve começar.
+  const [abertos, setAbertos] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!perfil) return;
@@ -139,10 +141,10 @@ export function Colecoes() {
             key={g.chave}
             titulo={g.nome}
             progresso={{ tenho: g.tenho, total: g.total }}
-            recolhido={recolhidos.has(g.chave)}
+            recolhido={!abertos.has(g.chave)}
             aoAlternar={() =>
-              setRecolhidos((r) => {
-                const novo = new Set(r);
+              setAbertos((a) => {
+                const novo = new Set(a);
                 if (novo.has(g.chave)) novo.delete(g.chave);
                 else novo.add(g.chave);
                 return novo;

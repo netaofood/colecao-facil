@@ -63,7 +63,8 @@ export function MinhaColecao() {
   const [erro, setErro] = useState<string | null>(null);
 
   const [filtro, setFiltro] = useState<Filtro>('todos');
-  const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
+  // Guarda quem está ABERTO. Vazio significa tudo fechado.
+  const [abertos, setAbertos] = useState<Set<string>>(new Set());
   const [aberto, setAberto] = useState<Item | null>(null);
   const [conferencia, setConferencia] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
@@ -515,10 +516,10 @@ export function MinhaColecao() {
             key={g.id ?? 'avulsos'}
             titulo={g.nome}
             progresso={{ tenho: g.tenho, total: g.total }}
-            recolhido={recolhidos.has(g.id ?? 'avulsos')}
+            recolhido={!abertos.has(g.id ?? 'avulsos')}
             aoAlternar={() =>
-              setRecolhidos((r) => {
-                const novo = new Set(r);
+              setAbertos((a) => {
+                const novo = new Set(a);
                 const chave = g.id ?? 'avulsos';
                 if (novo.has(chave)) novo.delete(chave);
                 else novo.add(chave);

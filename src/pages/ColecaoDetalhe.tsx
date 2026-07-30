@@ -58,7 +58,8 @@ export function ColecaoDetalhe() {
     | null
   >(null);
   const [busca, setBusca] = useState('');
-  const [recolhidos, setRecolhidos] = useState<Set<string>>(new Set());
+  // Guarda quem está ABERTO. Vazio significa tudo fechado.
+  const [abertos, setAbertos] = useState<Set<string>>(new Set());
   const [resumo, setResumo] = useState<string | null>(null);
   const [editando, setEditando] = useState<Item | null>(null);
   const [categorias, setCategorias] = useState<string[]>([]);
@@ -336,10 +337,10 @@ export function ColecaoDetalhe() {
             key={g.id ?? 'avulsos'}
             titulo={g.nome}
             contagem={g.total}
-            recolhido={recolhidos.has(g.id ?? 'avulsos')}
+            recolhido={!abertos.has(g.id ?? 'avulsos')}
             aoAlternar={() =>
-              setRecolhidos((r) => {
-                const novo = new Set(r);
+              setAbertos((a) => {
+                const novo = new Set(a);
                 const chave = g.id ?? 'avulsos';
                 if (novo.has(chave)) novo.delete(chave);
                 else novo.add(chave);

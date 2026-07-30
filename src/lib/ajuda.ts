@@ -44,7 +44,7 @@ A categoria guarda o que você já digitou antes e oferece como sugestão nas pr
 
 ## Organização por categoria
 
-Tendo coleções de categorias diferentes, elas aparecem agrupadas, cada categoria numa caixa com o progresso somado. Clique no título para recolher.
+Tendo coleções de categorias diferentes, elas aparecem agrupadas, cada categoria numa caixa com o progresso somado. As caixas começam fechadas: clique no título para abrir.
 
 Os botões **Por categoria** e **Tudo junto** trocam entre as duas visões. Coleções sem categoria ficam num grupo no fim.
 
@@ -93,7 +93,7 @@ A foto aparece na grade, colorida quando você tem o item e cinza quando falta.
 
 ## Blocos por subdivisão
 
-Se a coleção tiver subdivisões, cada uma vira uma caixa com o próprio progresso. Clique no título da caixa para recolher.
+Se a coleção tiver subdivisões, cada uma vira uma caixa com o próprio progresso. As caixas começam fechadas, mostrando o nome e o progresso de cada uma: clique no título para abrir.
 
 ## Renomear a coleção
 
