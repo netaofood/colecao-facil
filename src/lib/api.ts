@@ -647,3 +647,84 @@ export async function listarPagamentos(
 export function moeda(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+
+/* ---------------------------------------------------------------- */
+/* EDIÇÃO DE COLECIONADOR PELO ADMIN                                 */
+/* ---------------------------------------------------------------- */
+
+/** Campos que vivem na tabela usuarios: o admin escreve direto. */
+export async function editarDadosColecionador(
+  usuarioId: string,
+  dados: {
+    nome?: string | null;
+    apelido?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+    whatsapp?: string | null;
+    assinatura_ate?: string | null;
+    isento?: boolean;
+  }
+): Promise<void> {
+  const { error } = await supabase
+    .from('usuarios')
+    .update(dados)
+    .eq('id', usuarioId);
+
+  if (error) {
+    throw new Error(
+      error.code === '23505'
+        ? 'Esse apelido já está em uso por outra conta.'
+        : error.message
+    );
+  }
+}
+
+/**
+ * E-mail e senha vivem em auth.users e exigem a chave privilegiada.
+ * Vão por Edge Function, que roda no servidor.
+ */
+export async function editarAcessoColecionador(dados: {
+  usuarioId: string;
+  email?: string;
+  senha?: string;
+}): Promise<void> {
+  const { data: sessao } = await supabase.auth.getSession();
+  const token = sessao.session?.access_token;
+  if (!token) throw new Error('Sessão expirada. Entre novamente.');
+
+  const base = import.meta.env.VITE_SUPABASE_URL;
+
+  let resposta: Response;
+  try {
+    resposta = await fetch(`${base}/functions/v1/editar-colecionador`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: dados.usuarioId,
+        email: dados.email,
+        senha: dados.senha,
+      }),
+    });
+  } catch {
+    throw new Error(
+      'Não consegui alcançar a função editar-colecionador. Verifique se ela foi publicada.'
+    );
+  }
+
+  const bruto = await resposta.text();
+  let corpo: { erro?: string } = {};
+  try {
+    corpo = JSON.parse(bruto);
+  } catch {
+    corpo = {};
+  }
+
+  if (!resposta.ok) {
+    throw new Error(
+      corpo.erro || `A função respondeu ${resposta.status}. ${bruto.slice(0, 200)}`
+    );
+  }
+}

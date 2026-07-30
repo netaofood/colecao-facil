@@ -283,6 +283,20 @@ Se o colecionador cadastrou o WhatsApp, o botão já abre a conversa dele. Senã
 
 A lista mostra todo mundo, com data de criação. Quem ainda não entrou aparece marcado como **nunca acessou**.
 
+## Editar um colecionador
+
+Na ficha, o botão **Editar** abre três abas:
+
+- **Dados** — nome, apelido, cidade e WhatsApp
+- **Acesso** — definir uma nova senha ou trocar o e-mail de acesso
+- **Assinatura** — ajustar o vencimento na mão ou marcar como isento
+
+Trocar o e-mail pede a digitação duas vezes: errar ali tranca a pessoa fora da conta.
+
+Para senha, prefira o **Redefinir senha**, que manda o link para o e-mail dele — assim ninguém além dele conhece a senha. Defina na mão só quando ele tiver perdido o acesso ao próprio e-mail.
+
+O e-mail da conta do administrador não pode ser alterado: ele é a chave da regra no banco.
+
 Clique num colecionador para abrir a ficha dele: quantas coleções e itens tem, quando acessou pela última vez, e o histórico de pagamentos. Dali você também registra pagamento e envia link de nova senha.
 
 Você pode desativar uma conta e reativar depois. Desativar não apaga nada.

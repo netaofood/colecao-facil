@@ -11,6 +11,7 @@ import {
   Search,
   KeyRound,
   Receipt,
+  Pencil,
   CheckCircle2,
   AlertTriangle,
   X,
@@ -38,6 +39,7 @@ import { BotaoWhatsApp } from '../../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../../components/BotaoCopiarLink';
 import { msg } from '../../lib/mensagens';
 import { CampoSenha } from '../../components/CampoSenha';
+import { ModalEditarColecionador } from './ModalEditarColecionador';
 
 type Aba = 'painel' | 'colecionadores' | 'pagamentos';
 
@@ -522,6 +524,7 @@ function FichaColecionador({
   const [aviso, setAviso] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [cobrando, setCobrando] = useState(false);
+  const [editando, setEditando] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
@@ -675,6 +678,22 @@ function FichaColecionador({
         )}
         <button
           type="button"
+          onClick={() => setEditando(true)}
+          style={{
+            ...TS.botaoSecundario,
+            flex: '1 1 130px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 7,
+          }}
+        >
+          <Pencil size={15} />
+          Editar
+        </button>
+
+        <button
+          type="button"
           onClick={async () => {
             setErro(null);
             try {
@@ -697,6 +716,14 @@ function FichaColecionador({
           Redefinir senha
         </button>
       </div>
+
+      {editando && (
+        <ModalEditarColecionador
+          usuario={usuario}
+          aoFechar={() => setEditando(false)}
+          aoSalvar={aoMudar}
+        />
+      )}
 
       {cobrando && (
         <ModalPagamento
