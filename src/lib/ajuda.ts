@@ -109,7 +109,9 @@ Não precisa ir até o catálogo para isso.
 
 ## Divulgar
 
-Os botões no fim da tela mandam a **lista em texto**, não um endereço. Sua coleção é privada: um link não abriria para quem recebe.
+Os botões no fim da tela mandam a **lista em texto**, não um endereço.
+
+Filtrando por uma subdivisão no seletor do topo, a mensagem sai só com os itens dela, e o título indica qual é. Sua coleção é privada: um link não abriria para quem recebe.
 
 **O que me falta** manda a lista dos faltantes. **Minhas repetidas** manda o que está sobrando, com a quantidade. Cada um tem o botão de copiar ao lado, para você mandar por onde quiser.
 
@@ -170,6 +172,8 @@ Esta tela monta o texto pronto para você negociar. O app não intermedeia nada:
 ## Como usar
 
 Escolha a coleção — ou deixe em **Todas as coleções** para juntar tudo numa lista só. Escolha a aba, toque nos itens que quer incluir. Use a busca para achar rápido, ou **Marcar todos**.
+
+O filtro de subdivisão limita o que aparece, e o **Marcar todos** respeita esse filtro: dá para marcar de uma vez tudo que falta do Ouro, por exemplo. Com várias coleções, o filtro age pelo nome, então "Ouro" pega os blocos de Ouro de todas elas.
 
 Com várias coleções, os itens aparecem separados por coleção, e a mensagem sai organizada do mesmo jeito.
 

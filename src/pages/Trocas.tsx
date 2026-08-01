@@ -2,8 +2,18 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Copy, Search, Check, Info } from 'lucide-react';
 import { T, TS } from '../theme';
 import { useAuth } from '../lib/auth';
-import { listarMinhasColecoes, listarItens, listarMeusItens } from '../lib/api';
-import type { ColecaoComProgresso, Item, ItemUsuario } from '../lib/tipos';
+import {
+  listarMinhasColecoes,
+  listarItens,
+  listarMeusItens,
+  listarSubdivisoes,
+} from '../lib/api';
+import type {
+  ColecaoComProgresso,
+  Item,
+  ItemUsuario,
+  Subdivisao,
+} from '../lib/tipos';
 import { BotaoWhatsApp } from '../components/BotaoWhatsApp';
 import { BotaoCopiarLink } from '../components/BotaoCopiarLink';
 import { msg } from '../lib/mensagens';
@@ -25,6 +35,9 @@ export function Trocas() {
   const [lado, setLado] = useState<Lado>('tenho');
   const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState('');
+  const [subdivisoes, setSubdivisoes] = useState<Subdivisao[]>([]);
+  // Vazio = todas
+  const [subFiltro, setSubFiltro] = useState('');
 
   useEffect(() => {
     if (!perfil) return;
@@ -43,12 +56,17 @@ export function Trocas() {
         ? colecoes.filter((c) => c.id === colecaoId)
         : colecoes;
 
-      const listas = await Promise.all(alvos.map((c) => listarItens(c.id)));
+      const [listas, subs] = await Promise.all([
+        Promise.all(alvos.map((c) => listarItens(c.id))),
+        Promise.all(alvos.map((c) => listarSubdivisoes(c.id))),
+      ]);
       const lista = listas.flat();
 
       setItens(lista);
+      setSubdivisoes(subs.flat());
       setMeus(await listarMeusItens(perfil.id, lista.map((i) => i.id)));
       setEscolhidos(new Set());
+      setSubFiltro('');
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Erro ao carregar.');
     } finally {
@@ -63,8 +81,20 @@ export function Trocas() {
   const colecao = colecoes.find((c) => c.id === colecaoId);
 
   /** Repetidas de um lado, faltantes do outro. */
+  /** id da subdivisão para o nome dela, já que o filtro age por nome. */
+  const nomePorId = useMemo(
+    () => new Map(subdivisoes.map((sd) => [sd.id, sd.nome.toLowerCase()])),
+    [subdivisoes]
+  );
+
   const disponiveis = useMemo(() => {
     const lista = itens.filter((i) => {
+      if (subFiltro) {
+        const nome = i.subdivisao_id
+          ? (nomePorId.get(i.subdivisao_id) ?? '')
+          : 'avulsos';
+        if (nome !== subFiltro.toLowerCase()) return false;
+      }
       const status = meus.get(i.id)?.status ?? 'falta';
       return lado === 'tenho' ? status === 'repetida' : status === 'falta';
     });
@@ -76,7 +106,22 @@ export function Trocas() {
         i.nome.toLowerCase().includes(t) ||
         (i.numero ?? '').toLowerCase().includes(t)
     );
-  }, [itens, meus, lado, busca]);
+  }, [itens, meus, lado, busca, subFiltro, nomePorId]);
+
+  /**
+   * Nomes de subdivisão sem repetir. Com várias coleções, duas podem ter
+   * um bloco "Ouro" cada: o filtro age pelo nome, não pelo identificador.
+   */
+  const nomesSubdivisao = useMemo(() => {
+    const vistos = new Map<string, string>();
+    for (const sd of subdivisoes) {
+      const chave = sd.nome.toLowerCase();
+      if (!vistos.has(chave)) vistos.set(chave, sd.nome);
+    }
+    return [...vistos.values()].sort((a, b) =>
+      a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
+    );
+  }, [subdivisoes]);
 
   /** Disponíveis separadas por coleção, para não misturar tudo. */
   const porColecao = useMemo(() => {
@@ -253,6 +298,35 @@ export function Trocas() {
                     style={{ ...TS.input, paddingLeft: 36 }}
                   />
                 </div>
+
+                {nomesSubdivisao.length > 0 && (
+                  <select
+                    value={subFiltro}
+                    onChange={(e) => {
+                      setSubFiltro(e.target.value);
+                      setEscolhidos(new Set());
+                    }}
+                    aria-label="Filtrar por subdivisão"
+                    style={{
+                      ...TS.input,
+                      width: 'auto',
+                      minWidth: 150,
+                      colorScheme: 'dark',
+                      borderColor: subFiltro ? T.neon : T.border,
+                      color: subFiltro ? T.neon : T.textSecondary,
+                    }}
+                  >
+                    <option value="">Todas as subdivisões</option>
+                    {nomesSubdivisao.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                    {itens.some((i) => !i.subdivisao_id) && (
+                      <option value="avulsos">Sem subdivisão</option>
+                    )}
+                  </select>
+                )}
 
                 <button
                   type="button"

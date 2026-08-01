@@ -65,6 +65,8 @@ export function MinhaColecao() {
   const [filtro, setFiltro] = useState<Filtro>('todos');
   // Guarda quem está ABERTO. Vazio significa tudo fechado.
   const [abertos, setAbertos] = useState<Set<string>>(new Set());
+  // Vazio = todas as subdivisões
+  const [subFiltro, setSubFiltro] = useState<string>('');
   const [aberto, setAberto] = useState<Item | null>(null);
   const [conferencia, setConferencia] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
@@ -154,10 +156,13 @@ export function MinhaColecao() {
   const visiveis = useMemo(
     () =>
       itens.filter((i) => {
+        if (subFiltro && (i.subdivisao_id ?? 'avulsos') !== subFiltro) {
+          return false;
+        }
         if (filtro === 'todos') return true;
         return statusDe(i.id) === filtro;
       }),
-    [itens, filtro, statusDe]
+    [itens, filtro, subFiltro, statusDe]
   );
 
   const aoClicarItem = useCallback(
@@ -212,6 +217,7 @@ export function MinhaColecao() {
     }[] = [];
 
     for (const sub of subdivisoes) {
+      if (subFiltro && subFiltro !== sub.id) continue;
       const { tenho, total } = contar(sub.id);
       if (total === 0) continue;
       lista.push({
@@ -224,7 +230,7 @@ export function MinhaColecao() {
     }
 
     const avulsos = contar(null);
-    if (avulsos.total > 0) {
+    if (avulsos.total > 0 && (!subFiltro || subFiltro === 'avulsos')) {
       lista.push({
         id: null,
         nome: subdivisoes.length > 0 ? 'Sem subdivisão' : 'Todos os itens',
@@ -235,33 +241,53 @@ export function MinhaColecao() {
     }
 
     return lista;
-  }, [visiveis, itens, subdivisoes, meus]);
+  }, [visiveis, itens, subdivisoes, meus, subFiltro]);
 
   if (carregando) return <Caixa texto="Carregando..." />;
   if (!colecao) return <Caixa texto={erro ?? 'Coleção não encontrada.'} erro />;
 
   const faltantes = totais.total - totais.tenho;
 
-  // Listas em texto puro. A coleção é privada, então mandar um endereço
-  // não serviria de nada para quem recebe: o que vale é a lista em si.
+  // Listas em texto puro, respeitando o filtro de subdivisão da tela.
+  // A coleção é privada, então mandar um endereço não serviria de nada
+  // para quem recebe: o que vale é a lista em si.
   const rotuloDoItem = (i: Item) => i.numero || i.nome;
 
+  const nomeSubFiltrada =
+    subFiltro === 'avulsos'
+      ? 'Sem subdivisão'
+      : (subdivisoes.find((sd) => sd.id === subFiltro)?.nome ?? null);
+
+  // Com o filtro ligado, o título da mensagem diz de qual parte é
+  const tituloLista = nomeSubFiltrada
+    ? `${colecao.nome} · ${nomeSubFiltrada}`
+    : colecao.nome;
+
+  // Ignora o filtro de status, senão a pílula "Tenho" esvaziaria a lista
+  // de faltantes. O que vale aqui é só o filtro de subdivisão.
+  const noEscopo = itens.filter(
+    (i) => !subFiltro || (i.subdivisao_id ?? 'avulsos') === subFiltro
+  );
+
+  const listaFaltantes = noEscopo.filter(
+    (i) => (meus.get(i.id)?.status ?? 'falta') === 'falta'
+  );
+  const listaRepetidas = noEscopo.filter(
+    (i) => meus.get(i.id)?.status === 'repetida'
+  );
+
   const textoFaltantes = msg.faltantes(
-    colecao.nome,
-    itens
-      .filter((i) => (meus.get(i.id)?.status ?? 'falta') === 'falta')
-      .map(rotuloDoItem)
+    tituloLista,
+    listaFaltantes.map(rotuloDoItem)
   );
 
   const textoRepetidas = msg.repetidas(
-    colecao.nome,
-    itens
-      .filter((i) => meus.get(i.id)?.status === 'repetida')
-      .map((i) => {
-        const qtd = meus.get(i.id)?.quantidade_repetida ?? 1;
-        const base = rotuloDoItem(i);
-        return qtd > 1 ? `${base} (${qtd}x)` : base;
-      })
+    tituloLista,
+    listaRepetidas.map((i) => {
+      const qtd = meus.get(i.id)?.quantidade_repetida ?? 1;
+      const base = rotuloDoItem(i);
+      return qtd > 1 ? `${base} (${qtd}x)` : base;
+    })
   );
 
   return (
@@ -451,6 +477,34 @@ export function MinhaColecao() {
       <div
         style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}
       >
+        {subdivisoes.length > 0 && (
+          <select
+            value={subFiltro}
+            onChange={(e) => setSubFiltro(e.target.value)}
+            aria-label="Filtrar por subdivisão"
+            style={{
+              ...TS.input,
+              width: 'auto',
+              minWidth: 150,
+              padding: '9px 12px',
+              fontSize: 13,
+              colorScheme: 'dark',
+              borderColor: subFiltro ? T.neon : T.border,
+              color: subFiltro ? T.neon : T.textSecondary,
+            }}
+          >
+            <option value="">Todas as subdivisões</option>
+            {subdivisoes.map((sd) => (
+              <option key={sd.id} value={sd.id}>
+                {sd.nome}
+              </option>
+            ))}
+            {itens.some((i) => !i.subdivisao_id) && (
+              <option value="avulsos">Sem subdivisão</option>
+            )}
+          </select>
+        )}
+
         <BotaoFerramenta
           ativa={conferencia}
           Icone={Zap}
@@ -556,7 +610,7 @@ export function MinhaColecao() {
         <div style={{ ...TS.card, marginTop: 24 }}>
           <div style={{ ...TS.label, marginBottom: 10 }}>Divulgar</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {faltantes > 0 && (
+            {listaFaltantes.length > 0 && (
               <>
                 <div style={{ flex: '1 1 170px' }}>
                   <BotaoWhatsApp
@@ -574,7 +628,7 @@ export function MinhaColecao() {
                 </div>
               </>
             )}
-            {totais.repetidas > 0 && (
+            {listaRepetidas.length > 0 && (
               <>
                 <div style={{ flex: '1 1 170px' }}>
                   <BotaoWhatsApp
